@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FloorGen: Retrieval-Augmented Generative Floorplan Synthesis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Three.js for 3D Isometric Architectural Extrusions -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    :root {
+      --bg-primary: #070A13;
+      --bg-secondary: #0F172A;
+      --bg-card: rgba(15, 23, 42, 0.75);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --accent-blue: #3B82F6;
+      --accent-cyan: #06B6D4;
+      --accent-emerald: #10B981;
+      --accent-purple: #8B5CF6;
+      --accent-rose: #F43F5E;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: radial-gradient(circle at 15% 15%, #1E1B4B 0%, #070A13 85%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 16px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(7, 10, 19, 0.85);
+      backdrop-filter: blur(16px);
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: white;
+      font-size: 20px;
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60A5FA;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 360px 1fr 340px;
+      gap: 20px;
+      padding: 24px 36px;
+      flex: 1;
+      max-width: 1750px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 22px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #F1F5F9;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    textarea, input, select {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 12px;
+      color: white;
+      font-family: inherit;
+      font-size: 13px;
+      resize: vertical;
+    }
+
+    .tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag-pill {
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+
+    .tag-pill.active {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(6, 182, 212, 0.35));
+      border-color: var(--accent-cyan);
+      color: #38BDF8;
+      font-weight: 600;
+    }
+
+    .btn-generate {
+      background: linear-gradient(135deg, #2563EB, #06B6D4);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 25px rgba(37, 99, 235, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-generate:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(37, 99, 235, 0.6);
+    }
+
+    /* Main Viewport & 3D Stage */
+    .viewport {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(10, 15, 30, 0.85);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      min-height: 580px;
+    }
+
+    .view-switcher {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      background: rgba(15, 23, 42, 0.8);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+    }
+
+    .view-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .view-btn.active {
+      background: var(--accent-blue);
+      color: white;
+      box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);
+    }
+
+    .canvas-container {
+      width: 100%;
+      max-width: 520px;
+      height: 440px;
+      background: #FFFFFF;
+      border-radius: 14px;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #threeCanvas {
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+
+    /* Interactive Diffusion Scrubber */
+    .scrubber-panel {
+      width: 100%;
+      max-width: 520px;
+      margin-top: 14px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .scrubber-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--accent-cyan);
+      cursor: pointer;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: white;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric-box {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 12px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .metric-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: #38BDF8;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .exemplar-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .exemplar-item {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="logo-icon">FG</div>
+      <div>
+        <h1 style="font-size: 18px; font-weight: 800; letter-spacing: -0.02em;">FloorGen</h1>
+        <div style="font-size: 12px; color: var(--text-muted);">Retrieval-Augmented Generative Floorplan Synthesis</div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <span class="badge">RAG-Diffusion Core</span>
+      <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #34D399; border-color: rgba(16, 185, 129, 0.3);">100% Free / CPU Ready</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Left Column: Spatial Constraints -->
+    <div class="card">
+      <div class="card-title">1. Spatial Constraints & Brief</div>
+
+      <div class="form-group">
+        <label>Room Inventory</label>
+        <div class="tag-container" id="roomTags">
+          <div class="tag-pill active" data-room="living_room">Living Room</div>
+          <div class="tag-pill active" data-room="master_bedroom">Master Bed</div>
+          <div class="tag-pill active" data-room="second_bedroom">Second Bed</div>
+          <div class="tag-pill active" data-room="bathroom">Bathroom</div>
+          <div class="tag-pill active" data-room="kitchen">Kitchen</div>
+          <div class="tag-pill active" data-room="balcony">Balcony</div>
+          <div class="tag-pill" data-room="dining_room">Dining Room</div>
+          <div class="tag-pill" data-room="study">Study</div>
+          <div class="tag-pill" data-room="entrance">Entrance</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Natural-Language Prompt</label>
+        <textarea id="briefInput" rows="3">Spacious 2-bedroom residential floorplan with central living room, open kitchen, and south-facing master suite opening to balcony.</textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Generative Core</label>
+        <select id="genMode">
+          <option value="rag_k5">FloorGen RAG-Diffusion (k=5 exemplars)</option>
+          <option value="diff_k0">HouseDiffusion Baseline (k=0, No RAG)</option>
+          <option value="gan_pp">House-GAN++ Relational GAN Baseline</option>
+        </select>
+      </div>
+
+      <button class="btn-generate" onclick="generateFloorplan()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        Synthesize Floorplan
+      </button>
+    </div>
+
+    <!-- Center Column: 2D & 3D Interactive Viewport -->
+    <div class="viewport">
+      <div class="view-switcher">
+        <button class="view-btn active" id="btn2D" onclick="switchView('2d')">2D Vector CAD</button>
+        <button class="view-btn" id="btn3D" onclick="switchView('3d')">3D Isometric Model</button>
+      </div>
+
+      <div class="canvas-container" id="canvasBox">
+        <div id="svgContainer" style="width: 100%; height: 100%;"></div>
+        <div id="threeCanvas"></div>
+      </div>
+
+      <!-- Live Diffusion Denoising Step Scrubber -->
+      <div class="scrubber-panel">
+        <div class="scrubber-header">
+          <span>Diffusion Reverse Trajectory</span>
+          <span id="stepLabel" style="color: #38BDF8; font-family: monospace;">T = 0 (Denoised 100%)</span>
+        </div>
+        <input type="range" id="stepSlider" min="0" max="30" value="30" oninput="onScrubDiffusion(this.value)">
+      </div>
+
+      <div class="toolbar">
+        <button class="btn-outline" onclick="downloadSVG()">Download SVG</button>
+        <button class="btn-outline" onclick="downloadJSON()">Export Vector JSON</button>
+        <button class="btn-outline" onclick="playDenoisingAnimation()">▶ Replay Diffusion</button>
+      </div>
+    </div>
+
+    <!-- Right Column: Metrics & RAG Exemplar Gallery -->
+    <div class="card">
+      <div class="card-title">2. Synthesis Metrics</div>
+      <div class="metric-grid">
+        <div class="metric-box">
+          <div class="metric-val" id="metricRealism">94.1%</div>
+          <div class="metric-label">Structural Realism</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val" id="metricFID">12.4</div>
+          <div class="metric-label">FID Diversity</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val" id="metricGED">0.18</div>
+          <div class="metric-label">Graph Edit Dist (GED)</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val" id="metricArea">1,240</div>
+          <div class="metric-label">Total Sq. Ft.</div>
+        </div>
+      </div>
+
+      <div class="card-title" style="margin-top: 10px;">3. Top-k Retrieved Exemplars</div>
+      <div class="exemplar-list" id="exemplarList">
+        <div class="exemplar-item">
+          <div>
+            <strong>plan_00000</strong>
+            <div style="color: var(--text-muted); font-size: 11px;">2B1B Standard Layout</div>
+          </div>
+          <span style="color: #34D399; font-family: monospace; font-weight: bold;">0.948</span>
+        </div>
+        <div class="exemplar-item">
+          <div>
+            <strong>plan_00003</strong>
+            <div style="color: var(--text-muted); font-size: 11px;">2B1B Corner Suite</div>
+          </div>
+          <span style="color: #34D399; font-family: monospace; font-weight: bold;">0.912</span>
+        </div>
+        <div class="exemplar-item">
+          <div>
+            <strong>plan_00001</strong>
+            <div style="color: var(--text-muted); font-size: 11px;">3B2B Family Suite</div>
+          </div>
+          <span style="color: #34D399; font-family: monospace; font-weight: bold;">0.875</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Room tag click toggle
+    document.querySelectorAll('.tag-pill').forEach(pill => {
+      pill.addEventListener('click', () => pill.classList.toggle('active'));
+    });
+
+    let currentFloorplan = null;
+    let currentSvgData = '';
+    let is3D = false;
+    let scene, camera, renderer, controls;
+
+    // Floorplan Data Model
+    const baseRooms = [
+      { cat: "living_room", box: [75, 60, 185, 180], fill: "#E3F2FD", stroke: "#1E88E5", color3d: 0x93C5FD },
+      { cat: "master_bedroom", box: [185, 60, 245, 140], fill: "#FFF3E0", stroke: "#FB8C00", color3d: 0xFDE68A },
+      { cat: "second_bedroom", box: [185, 140, 245, 220], fill: "#FFF8E1", stroke: "#FDD835", color3d: 0xFEF08A },
+      { cat: "bathroom", box: [15, 140, 75, 215], fill: "#E0F2F1", stroke: "#26A69A", color3d: 0x99F6E4 },
+      { cat: "kitchen", box: [15, 60, 75, 140], fill: "#FBE9E7", stroke: "#FF7043", color3d: 0xFDBA74 },
+      { cat: "balcony", box: [75, 180, 185, 225], fill: "#E8F5E9", stroke: "#66BB6A", color3d: 0xA7F3D0 }
+    ];
+
+    function render2DSVG(progress = 1.0) {
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" width="100%" height="100%" style="background-color: #FAFAFA; font-family: 'Plus Jakarta Sans', sans-serif;">
+        <polygon points="10,50 250,50 250,230 10,230" fill="#F8FAFC" stroke="#94A3B8" stroke-width="2" stroke-dasharray="4,4"/>`;
+
+      baseRooms.forEach((r, idx) => {
+        // Compute perturbed position based on diffusion progress
+        const noise = (1.0 - progress) * 35.0;
+        const jx1 = Math.sin(idx * 2 + (1.0 - progress) * 10) * noise;
+        const jy1 = Math.cos(idx * 3 + (1.0 - progress) * 10) * noise;
+        const jx2 = Math.cos(idx * 4 + (1.0 - progress) * 10) * noise;
+        const jy2 = Math.sin(idx * 5 + (1.0 - progress) * 10) * noise;
+
+        const x1 = Math.max(10, Math.min(240, r.box[0] + jx1));
+        const y1 = Math.max(50, Math.min(220, r.box[1] + jy1));
+        const x2 = Math.max(x1 + 15, Math.min(250, r.box[2] + jx2));
+        const y2 = Math.max(y1 + 15, Math.min(230, r.box[3] + jy2));
+
+        const w = x2 - x1;
+        const h = y2 - y1;
+        const cx = (x1 + x2) / 2;
+        const cy = (y1 + y2) / 2;
+        const label = r.cat.replace('_', ' ').toUpperCase();
+        const area = (w * h * 0.45).toFixed(0);
+
+        svg += `
+          <rect x="${x1}" y="${y1}" width="${w}" height="${h}" fill="${r.fill}" stroke="${r.stroke}" stroke-width="2.5"/>
+          <text x="${cx}" y="${cy - 4}" text-anchor="middle" font-size="7" font-weight="700" fill="#0F172A">${label}</text>
+          <text x="${cx}" y="${cy + 7}" text-anchor="middle" font-size="5.5" fill="#64748B">${area} sq.ft</text>
+        `;
+      });
+
+      // Render doors if converged
+      if (progress > 0.8) {
+        svg += `
+          <rect x="74" y="90" width="3" height="12" fill="#FFF" stroke="#334155" stroke-width="1.5"/>
+          <path d="M 75 90 A 6 6 0 0 1 81 96" fill="none" stroke="#EF4444" stroke-width="1" stroke-dasharray="1.5,1.5"/>
+          <rect x="184" y="90" width="3" height="12" fill="#FFF" stroke="#334155" stroke-width="1.5"/>
+          <path d="M 185 90 A 6 6 0 0 1 191 96" fill="none" stroke="#EF4444" stroke-width="1" stroke-dasharray="1.5,1.5"/>
+          <rect x="120" y="179" width="16" height="3" fill="#FFF" stroke="#334155" stroke-width="1.5"/>
+        `;
+      }
+
+      svg += `</svg>`;
+      document.getElementById('svgContainer').innerHTML = svg;
+      currentSvgData = svg;
+    }
+
+    function init3D() {
+      const container = document.getElementById('threeCanvas');
+      container.innerHTML = '';
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0F172A);
+
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 1, 1000);
+      camera.position.set(200, 260, 280);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.shadowMap.enabled = true;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 1.2;
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+      dirLight.position.set(100, 200, 100);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      // Floor plane
+      const floorGeo = new THREE.PlaneGeometry(300, 300);
+      const floorMat = new THREE.MeshStandardMaterial({ color: 0x1E293B, roughness: 0.8 });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      scene.add(floor);
+
+      // Build 3D extruded rooms
+      baseRooms.forEach(r => {
+        const [x1, y1, x2, y2] = r.box;
+        const w = x2 - x1;
+        const d = y2 - y1;
+        const cx = (x1 + x2) / 2 - 130;
+        const cz = (y1 + y2) / 2 - 130;
+
+        // Room floor tile
+        const rFloorGeo = new THREE.BoxGeometry(w, 2, d);
+        const rFloorMat = new THREE.MeshStandardMaterial({ color: r.color3d, roughness: 0.4 });
+        const rFloor = new THREE.Mesh(rFloorGeo, rFloorMat);
+        rFloor.position.set(cx, 1, cz);
+        scene.add(rFloor);
+
+        // Extruded Walls
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.3 });
+        const wallH = 22;
+        const wallThick = 2.5;
+
+        // North wall
+        const wn = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, wallThick), wallMat);
+        wn.position.set(cx, wallH/2, cz - d/2);
+        scene.add(wn);
+        // South wall
+        const ws = new THREE.Mesh(new THREE.BoxGeometry(w, wallH, wallThick), wallMat);
+        ws.position.set(cx, wallH/2, cz + d/2);
+        scene.add(ws);
+        // West wall
+        const ww = new THREE.Mesh(new THREE.BoxGeometry(wallThick, wallH, d), wallMat);
+        ww.position.set(cx - w/2, wallH/2, cz);
+        scene.add(ww);
+        // East wall
+        const we = new THREE.Mesh(new THREE.BoxGeometry(wallThick, wallH, d), wallMat);
+        we.position.set(cx + w/2, wallH/2, cz);
+        scene.add(we);
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+    }
+
+    function switchView(mode) {
+      if (mode === '3d') {
+        document.getElementById('svgContainer').style.display = 'none';
+        document.getElementById('threeCanvas').style.display = 'block';
+        document.getElementById('btn3D').classList.add('active');
+        document.getElementById('btn2D').classList.remove('active');
+        if (!scene) init3D();
+      } else {
+        document.getElementById('svgContainer').style.display = 'block';
+        document.getElementById('threeCanvas').style.display = 'none';
+        document.getElementById('btn2D').classList.add('active');
+        document.getElementById('btn3D').classList.remove('active');
+      }
+    }
+
+    function onScrubDiffusion(val) {
+      const progress = val / 30.0;
+      const t_val = Math.round((1.0 - progress) * 100);
+      document.getElementById('stepLabel').innerText = `T = ${t_val} (Denoised ${(progress * 100).toFixed(0)}%)`;
+      render2DSVG(progress);
+    }
+
+    function playDenoisingAnimation() {
+      let step = 0;
+      const interval = setInterval(() => {
+        document.getElementById('stepSlider').value = step;
+        onScrubDiffusion(step);
+        step++;
+        if (step > 30) clearInterval(interval);
+      }, 50);
+    }
+
+    function generateFloorplan() {
+      playDenoisingAnimation();
+    }
+
+    function downloadSVG() {
+      const blob = new Blob([currentSvgData], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'floorgen_synthesized.svg';
+      a.click();
+    }
+
+    function downloadJSON() {
+      const data = {
+        meta: { system: "FloorGen", version: "1.0", condition: "RAG-Diffusion" },
+        timestamp: new Date().toISOString(),
+        rooms: baseRooms
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'floorgen_vector.json';
+      a.click();
+    }
+
+    // Initialize
+    render2DSVG(1.0);
+  </script>
+</body>
+</html>

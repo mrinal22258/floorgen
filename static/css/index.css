@@ -1,0 +1,74 @@
+body {
+  font-family: 'Noto Sans', sans-serif;
+  color: #4a4a4a;
+}
+
+.footer .icon-link {
+  font-size: 25px;
+  color: #000;
+  margin: 0 8px;
+}
+
+.link-block a {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.teaser-img {
+  width: 100%;
+  max-width: 1000px;
+  border-radius: 8px;
+  margin: 0 auto;
+  display: block;
+}
+
+.publication-title {
+  font-family: 'Google Sans', sans-serif;
+}
+
+.publication-authors {
+  font-family: 'Google Sans', sans-serif;
+  margin: 8px 0;
+}
+
+.publication-affiliations {
+  font-family: 'Google Sans', sans-serif;
+  color: #7a7a7a;
+  margin-bottom: 12px;
+}
+
+.publication-venue {
+  color: #555;
+  width: fit-content;
+  font-weight: bold;
+}
+
+.publication-awards {
+  color: #ff3860;
+  width: fit-content;
+  font-weight: bold;
+  font-weight: bolder;
+}
+
+.publication-banner {
+  max-height: parent;
+}
+
+.publication-banner img {
+  position: relative;
+  left: 50%;
+  transform: translate(-50%, 0%);
+}
+
+.author-block {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+pre code {
+  font-size: 13px;
+}
+
+.table th, .table td {
+  vertical-align: middle;
+}

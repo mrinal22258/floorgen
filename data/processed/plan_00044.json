@@ -1,0 +1,493 @@
+{
+  "id": "plan_00044",
+  "archetype": "4B3B_luxury_penthouse",
+  "category": "penthouse_luxury",
+  "target_occupancy": "5-7 persons",
+  "total_area_sqm": 3856.7,
+  "total_area_sqft": 41513,
+  "description": "Extensive 4-bedroom 3-bathroom luxury penthouse featuring grand entrance gallery, formal dining room, chef's kitchen, master suite with private balcony, two secondary bedrooms, executive study, and utility storage.",
+  "spatial_reasoning": "Tri-partite spatial organization strictly separating entertaining, private sleeping quarters, and service utility spines.",
+  "num_rooms": 10,
+  "boundary": [
+    [
+      13.0,
+      9.9
+    ],
+    [
+      239.7,
+      9.9
+    ],
+    [
+      239.7,
+      261.7
+    ],
+    [
+      13.0,
+      261.7
+    ]
+  ],
+  "rooms": [
+    {
+      "id": 0,
+      "category": "entrance",
+      "category_id": 6,
+      "zone": "transition",
+      "polygon": [
+        [
+          17.2,
+          13.9
+        ],
+        [
+          69.9,
+          13.9
+        ],
+        [
+          69.9,
+          79.3
+        ],
+        [
+          17.2,
+          79.3
+        ]
+      ],
+      "bbox": [
+        17.2,
+        13.9,
+        69.9,
+        79.3
+      ],
+      "centroid": [
+        43.6,
+        46.6
+      ],
+      "area": 3446.6
+    },
+    {
+      "id": 1,
+      "category": "dining_room",
+      "category_id": 7,
+      "zone": "public",
+      "polygon": [
+        [
+          71.7,
+          16.8
+        ],
+        [
+          126.6,
+          16.8
+        ],
+        [
+          126.6,
+          79.9
+        ],
+        [
+          71.7,
+          79.9
+        ]
+      ],
+      "bbox": [
+        71.7,
+        16.8,
+        126.6,
+        79.9
+      ],
+      "centroid": [
+        99.2,
+        48.4
+      ],
+      "area": 3464.2
+    },
+    {
+      "id": 2,
+      "category": "living_room",
+      "category_id": 0,
+      "zone": "public",
+      "polygon": [
+        [
+          71.3,
+          83.3
+        ],
+        [
+          182.2,
+          83.3
+        ],
+        [
+          182.2,
+          200.7
+        ],
+        [
+          71.3,
+          200.7
+        ]
+      ],
+      "bbox": [
+        71.3,
+        83.3,
+        182.2,
+        200.7
+      ],
+      "centroid": [
+        126.8,
+        142.0
+      ],
+      "area": 13019.7
+    },
+    {
+      "id": 3,
+      "category": "kitchen",
+      "category_id": 4,
+      "zone": "service",
+      "polygon": [
+        [
+          17.0,
+          82.3
+        ],
+        [
+          69.7,
+          82.3
+        ],
+        [
+          69.7,
+          163.5
+        ],
+        [
+          17.0,
+          163.5
+        ]
+      ],
+      "bbox": [
+        17.0,
+        82.3,
+        69.7,
+        163.5
+      ],
+      "centroid": [
+        43.4,
+        122.9
+      ],
+      "area": 4279.2
+    },
+    {
+      "id": 4,
+      "category": "storage",
+      "category_id": 9,
+      "zone": "service",
+      "polygon": [
+        [
+          17.7,
+          163.9
+        ],
+        [
+          69.4,
+          163.9
+        ],
+        [
+          69.4,
+          221.4
+        ],
+        [
+          17.7,
+          221.4
+        ]
+      ],
+      "bbox": [
+        17.7,
+        163.9,
+        69.4,
+        221.4
+      ],
+      "centroid": [
+        43.6,
+        192.7
+      ],
+      "area": 2972.8
+    },
+    {
+      "id": 5,
+      "category": "study",
+      "category_id": 8,
+      "zone": "semi_private",
+      "polygon": [
+        [
+          126.9,
+          16.1
+        ],
+        [
+          180.9,
+          16.1
+        ],
+        [
+          180.9,
+          79.6
+        ],
+        [
+          126.9,
+          79.6
+        ]
+      ],
+      "bbox": [
+        126.9,
+        16.1,
+        180.9,
+        79.6
+      ],
+      "centroid": [
+        153.9,
+        47.8
+      ],
+      "area": 3429.0
+    },
+    {
+      "id": 6,
+      "category": "master_bedroom",
+      "category_id": 1,
+      "zone": "private",
+      "polygon": [
+        [
+          182.0,
+          14.1
+        ],
+        [
+          235.7,
+          14.1
+        ],
+        [
+          235.7,
+          149.3
+        ],
+        [
+          182.0,
+          149.3
+        ]
+      ],
+      "bbox": [
+        182.0,
+        14.1,
+        235.7,
+        149.3
+      ],
+      "centroid": [
+        208.8,
+        81.7
+      ],
+      "area": 7260.2
+    },
+    {
+      "id": 7,
+      "category": "bathroom",
+      "category_id": 3,
+      "zone": "service",
+      "polygon": [
+        [
+          179.3,
+          148.8
+        ],
+        [
+          235.4,
+          148.8
+        ],
+        [
+          235.4,
+          221.5
+        ],
+        [
+          179.3,
+          221.5
+        ]
+      ],
+      "bbox": [
+        179.3,
+        148.8,
+        235.4,
+        221.5
+      ],
+      "centroid": [
+        207.4,
+        185.2
+      ],
+      "area": 4078.5
+    },
+    {
+      "id": 8,
+      "category": "second_bedroom",
+      "category_id": 2,
+      "zone": "private",
+      "polygon": [
+        [
+          71.9,
+          201.1
+        ],
+        [
+          124.5,
+          201.1
+        ],
+        [
+          124.5,
+          256.0
+        ],
+        [
+          71.9,
+          256.0
+        ]
+      ],
+      "bbox": [
+        71.9,
+        201.1,
+        124.5,
+        256.0
+      ],
+      "centroid": [
+        98.2,
+        228.6
+      ],
+      "area": 2887.7
+    },
+    {
+      "id": 9,
+      "category": "balcony",
+      "category_id": 5,
+      "zone": "outdoor",
+      "polygon": [
+        [
+          126.2,
+          197.5
+        ],
+        [
+          182.2,
+          197.5
+        ],
+        [
+          182.2,
+          257.7
+        ],
+        [
+          126.2,
+          257.7
+        ]
+      ],
+      "bbox": [
+        126.2,
+        197.5,
+        182.2,
+        257.7
+      ],
+      "centroid": [
+        154.2,
+        227.6
+      ],
+      "area": 3371.2
+    }
+  ],
+  "adjacency": [
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      0,
+      3
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      1,
+      5
+    ],
+    [
+      2,
+      6
+    ],
+    [
+      6,
+      7
+    ],
+    [
+      2,
+      8
+    ],
+    [
+      2,
+      9
+    ]
+  ],
+  "doors": [
+    {
+      "room_a": 0,
+      "room_b": 1,
+      "pos": [
+        71.4,
+        47.5
+      ]
+    },
+    {
+      "room_a": 1,
+      "room_b": 2,
+      "pos": [
+        113.0,
+        95.2
+      ]
+    },
+    {
+      "room_a": 0,
+      "room_b": 3,
+      "pos": [
+        43.5,
+        84.8
+      ]
+    },
+    {
+      "room_a": 3,
+      "room_b": 4,
+      "pos": [
+        43.5,
+        157.8
+      ]
+    },
+    {
+      "room_a": 1,
+      "room_b": 5,
+      "pos": [
+        126.6,
+        48.1
+      ]
+    },
+    {
+      "room_a": 2,
+      "room_b": 6,
+      "pos": [
+        167.8,
+        111.8
+      ]
+    },
+    {
+      "room_a": 6,
+      "room_b": 7,
+      "pos": [
+        208.1,
+        133.4
+      ]
+    },
+    {
+      "room_a": 2,
+      "room_b": 8,
+      "pos": [
+        112.5,
+        185.3
+      ]
+    },
+    {
+      "room_a": 2,
+      "room_b": 9,
+      "pos": [
+        140.5,
+        184.8
+      ]
+    }
+  ]
+}

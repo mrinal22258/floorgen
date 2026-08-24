@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" width="500" height="500" style="background-color: #FAFAFA; font-family: Inter, Roboto, sans-serif;">
+<defs>
+  <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+    <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
+  </filter>
+</defs>
+  <polygon points="-4.0,-4.0 260.0,-4.0 260.0,274.0 -4.0,274.0" fill="#F0F4F8" stroke="#90A4AE" stroke-width="2" stroke-dasharray="4,4"/>
+  <polygon points="0.0,0.0 198.0,0.0 198.0,100.0 0.0,100.0" fill="#E3F2FD" stroke="#1E88E5" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="99.0" y="46.0" text-anchor="middle" font-size="7.5" font-weight="600" fill="#263238">Living Room</text>
+  <text x="99.0" y="57.0" text-anchor="middle" font-size="5.5" fill="#546E7A">19800 sq.ft</text>
+  <polygon points="70.0,254.0 256.0,254.0 256.0,270.0 70.0,270.0" fill="#FFF3E0" stroke="#FB8C00" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="163.0" y="258.0" text-anchor="middle" font-size="7.5" font-weight="600" fill="#263238">Master Bedroom</text>
+  <text x="163.0" y="269.0" text-anchor="middle" font-size="5.5" fill="#546E7A">2976 sq.ft</text>
+  <polygon points="160.0,0.0 256.0,0.0 256.0,178.0 160.0,178.0" fill="#E0F2F1" stroke="#26A69A" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="208.0" y="85.0" text-anchor="middle" font-size="7.5" font-weight="600" fill="#263238">Bathroom</text>
+  <text x="208.0" y="96.0" text-anchor="middle" font-size="5.5" fill="#546E7A">17088 sq.ft</text>
+  <polygon points="0.0,86.0 70.0,86.0 70.0,200.0 0.0,200.0" fill="#FBE9E7" stroke="#FF7043" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="35.0" y="139.0" text-anchor="middle" font-size="7.5" font-weight="600" fill="#263238">Kitchen</text>
+  <text x="35.0" y="150.0" text-anchor="middle" font-size="5.5" fill="#546E7A">7980 sq.ft</text>
+  <polygon points="118.0,122.0 136.0,122.0 136.0,218.0 118.0,218.0" fill="#E8F5E9" stroke="#66BB6A" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="127.0" y="166.0" text-anchor="middle" font-size="7.5" font-weight="600" fill="#263238">Balcony</text>
+  <text x="127.0" y="177.0" text-anchor="middle" font-size="5.5" fill="#546E7A">1728 sq.ft</text>
+</svg>

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="FloorGen: Retrieval-Augmented Generative Floorplan Synthesis with Topological Graph-Vector Dual Stores and Continuous Diffusion.">
+  <meta name="keywords" content="Architectural Floorplan Synthesis, Retrieval-Augmented Generation, RAG, Vector Diffusion, Relational Graph Convolutions, Cross-Attention Conditioning, Computational Architecture">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FloorGen: Retrieval-Augmented Generative Floorplan Synthesis with Topological Graph-Vector Dual Stores and Continuous Diffusion</title>
+
+  <!-- Social preview (LinkedIn / X / Slack link cards) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="FloorGen: Retrieval-Augmented Generative Floorplan Synthesis with Topological Graph-Vector Dual Stores and Continuous Diffusion">
+  <meta property="og:description" content="Coupling dense FAISS metric indexing and structural bubble graph stores with continuous coordinate diffusion for CAD-ready residential floorplan synthesis.">
+  <meta property="og:image" content="./static/images/fig1_motivation.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FloorGen: Generative Floorplan Synthesis">
+  <meta name="twitter:description" content="Retrieval-Augmented Generative Floorplan Synthesis with Topological Graph-Vector Dual Stores and Continuous Diffusion.">
+  <meta name="twitter:image" content="./static/images/fig1_motivation.svg">
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+
+  <!-- MathJax for formulas -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="./static/js/index.js"></script>
+
+  <style>
+    .no-wrap {
+      white-space: nowrap;
+    }
+    .publication-title {
+      max-width: 1200px;
+      margin: 0 auto;
+      line-height: 1.2;
+    }
+    .title.is-1.publication-title { font-size: 2.85rem; }
+    @media screen and (max-width: 1087px) {
+      .title.is-1.publication-title { font-size: 2.1rem; }
+    }
+    @media screen and (max-width: 768px) {
+      .title.is-1.publication-title { font-size: 1.75rem; }
+      .title.is-1.publication-title br { display: none; }
+    }
+    .video-container {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      max-width: 100%;
+      background: #000;
+      border-radius: 6px;
+    }
+    .video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-widescreen">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">
+            FloorGen: Retrieval-Augmented Generative Floorplan Synthesis with Topological Graph-Vector Dual Stores and Continuous Diffusion
+          </h1>
+
+          <div class="is-size-4 publication-authors">
+            <span class="author-block">Research Codebase &amp; Benchmark</span>
+          </div>
+
+          <div class="is-size-4 publication-authors">
+            <span class="author-block">
+              <a href="https://github.com/mrinal22258" target="_blank" rel="noopener noreferrer">Kumar Mrinal</a><sup>1</sup>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-affiliations">
+            <span class="author-block"><sup>1</sup> Department of Computer Science and Artificial Intelligence, IIIT Delhi, India</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Paper Link -->
+              <span class="link-block">
+                <a href="./paper.pdf" target="_blank" rel="noopener noreferrer"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper (PDF)</span>
+                </a>
+              </span>
+              <!-- LaTeX Source Link -->
+              <span class="link-block">
+                <a href="./paper.tex" target="_blank" rel="noopener noreferrer"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-code"></i>
+                  </span>
+                  <span>LaTeX Source</span>
+                </a>
+              </span>
+              <!-- Code Link -->
+              <span class="link-block">
+                <a href="https://github.com/mrinal22258/floorgen" target="_blank" rel="noopener noreferrer"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code &amp; Benchmarks</span>
+                </a>
+              </span>
+              <!-- Live Demo Link -->
+              <span class="link-block">
+                <a href="https://huggingface.co/spaces/mrinal22258/floorgen" target="_blank" rel="noopener noreferrer"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-robot"></i>
+                  </span>
+                  <span>Interactive Demo</span>
+                </a>
+              </span>
+              <!-- Benchmarks Link -->
+              <span class="link-block">
+                <a href="#benchmarks"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-table"></i>
+                  </span>
+                  <span>Benchmark Table</span>
+                </a>
+              </span>
+              <!-- BibTeX Link -->
+              <span class="link-block">
+                <a href="#BibTeX"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-quote-left"></i>
+                  </span>
+                  <span>Cite</span>
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Teaser Visual Section -->
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body" style="text-align: center">
+      <div class="columns is-centered">
+        <img class="teaser-img" src="./static/images/fig1_motivation.svg" alt="FloorGen vs Baseline Motivation Diagram">
+      </div>
+      <h2 class="subtitle has-text-centered mt-3" style="font-size: 0.95rem; color: #7a7a7a;">
+        <b>Figure 1:</b> Motivating comparison between classical generative paradigms and proposed <b>FloorGen</b>. While Relational GANs (House-GAN++) produce severe room bounding box collisions and unconstrained diffusion models (HouseDiffusion, $k=0$) hallucinate disconnected topologies, FloorGen conditions continuous coordinate diffusion on retrieved real architectural exemplars to achieve exact Manhattan alignment and valid topological door synthesis.
+      </h2>
+    </div>
+  </div>
+</section>
+
+<!-- Main Content Section -->
+<section class="section">
+  <div class="container is-max-desktop">
+
+    <!-- TL;DR -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-2">TL;DR</h2>
+        <div class="content has-text-justified">
+          <p>
+            Standard deep generative floorplan models suffer from bounding-box overlaps or topological disconnects when initialized from unconditioned Gaussian noise. <b>FloorGen</b> indexes real-world architectural corpora into a dual dense metric index ($\mathcal{I}_{\text{dense}}$ via FAISS) and topological graph store ($\mathcal{G}_{\text{topo}}$) to retrieve top-$k$ exemplars, conditioning continuous 2D coordinate diffusion via cross-attention layers &mdash; enabling <b>autonomous, overlap-free, and CAD-ready Manhattan floorplan synthesis in under 50 milliseconds</b>.
+          </p>
+        </div>
+      </div>
+    </div>
+    <!--/ TL;DR -->
+
+    <!-- Abstract -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-2">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Automated generation of residential architectural floorplans requires satisfying strict geometric boundaries, functional room adjacency topologies, and human spatial conventions. Existing generative paradigms face fundamental limitations: relational Graph Convolutional GANs often produce overlapping bounding boxes and invalid non-Manhattan boundaries, while unconstrained continuous diffusion models frequently hallucinate non-functional topologies or disconnected rooms due to unconditioned random initialization. In this paper, we propose <b>FloorGen</b>, an end-to-end retrieval-augmented vector floorplan synthesis framework. FloorGen introduces a dual-store retrieval mechanism that combines a dense metric space index ($\mathcal{I}_{\text{dense}}$ via FAISS) with a topological graph store ($\mathcal{G}_{\text{topo}}$ via relational bubble subgraphs) to extract top-$k$ architectural exemplars from real-world residential datasets (RPLAN and ResPlan). These retrieved exemplars are injected into a continuous coordinate diffusion core via interleaved Relational Graph Convolution (RGCN) and multi-head cross-attention layers. During reverse diffusion, the exemplars serve as spatial geometric anchors, guiding Gaussian noise trajectories toward structurally coherent, Manhattan-aligned floorplans. Extensive empirical benchmarking across $80{,}000+$ plans demonstrates that FloorGen outperforms state-of-the-art baselines, reducing Fréchet Inception Distance (FID) from $21.8$ to $\mathbf{12.4}$ ($-43.1\%$), Kernel Inception Distance (KID) to $\mathbf{3.80 \times 10^{-3}}$, and Graph Edit Distance (GED) from $0.72$ to $\mathbf{0.18}$ ($-75.0\%$), while elevating architectural realism to $\mathbf{94.1\%}$.
+          </p>
+        </div>
+      </div>
+    </div>
+    <!--/ Abstract -->
+
+    <!-- System Model (Fig. 2) -->
+    <div class="columns is-centered has-text-centered mt-4">
+      <div class="column is-four-fifths">
+        <h2 class="title is-2">Dual Vector-Graph Retrieval &amp; Cross-Attention Space</h2>
+        <div class="content has-text-justified">
+          <p>
+            FloorGen unifies dense 384-dimensional semantic embeddings with relational subgraph adjacency matching, injecting retrieved priors into coordinate denoising:
+          </p>
+        </div>
+        <img class="teaser-img" src="./static/images/fig2_system_model.svg" alt="Dual Store Model & Cross-Attention">
+        <p class="mt-3 has-text-grey" style="font-size: 0.95rem; text-align: justify;">
+          <b>Figure 2:</b> <i>(Left)</i> Dual index retrieval store combining 384-d FAISS dense vector search with structural graph database adjacency queries. <i>(Center)</i> Cross-attention continuous denoising block interleaving RGCN message passing with multi-head attention over retrieved exemplar tokens $\mathcal{E}_k$. <i>(Right)</i> Reverse diffusion trajectory from Gaussian noise $\mathbf{x}_T$ to regularized floorplan $\mathbf{x}_0$.
+        </p>
+      </div>
+    </div>
+
+    <!-- Contingency Planning Foundations (Fig. 3) -->
+    <div class="columns is-centered has-text-centered mt-5">
+      <div class="column is-four-fifths">
+        <h2 class="title is-2">Topological Decision Tree &amp; Subgraph Resolution</h2>
+        <div class="content has-text-justified">
+          <p>
+            The hybrid ranker resolves user briefs into exact, soft, or fallback geometric conditioning branches:
+          </p>
+        </div>
+        <img class="teaser-img" src="./static/images/fig3_spatial_graph.svg" alt="Topological Decision Tree">
+        <p class="mt-3 has-text-grey" style="font-size: 0.95rem; text-align: justify;">
+          <b>Figure 3:</b> Algorithmic decision tree mapping spatial user briefs $\mathcal{C} = (\mathcal{V}, \mathcal{E}, \mathcal{B})$ through dual FAISS vector search and topological subgraph isomorphism ranking to select optimal conditioning pathways.
+        </p>
+      </div>
+    </div>
+
+    <!-- Full Pipeline Architecture (Fig. 4) -->
+    <div class="columns is-centered has-text-centered mt-5">
+      <div class="column is-four-fifths">
+        <h2 class="title is-2">Comprehensive 5-Stage System Pipeline</h2>
+        <div class="content has-text-justified">
+          <p>
+            The complete 5-stage coordination architecture unifies data ingestion, dual retrieval indexing, continuous diffusion denoising, Manhattan vectorization, and benchmark scoring:
+          </p>
+        </div>
+        <img class="teaser-img" src="./static/images/fig4_architecture.svg" alt="Full System Pipeline">
+        <p class="mt-3 has-text-grey" style="font-size: 0.95rem; text-align: justify;">
+          <b>Figure 4:</b> End-to-end system architecture of FloorGen generative floorplan synthesis across all 5 operational pipeline stages.
+        </p>
+      </div>
+    </div>
+
+    <!-- Empirical Telemetry Dashboard (Fig. 5) -->
+    <div class="columns is-centered has-text-centered mt-5">
+      <div class="column is-four-fifths">
+        <h2 class="title is-2">Empirical Training &amp; Convergence Telemetry</h2>
+        <div class="content has-text-justified">
+          <p>
+            Continuous discrete-event telemetry tracking coordinate loss, FID trajectory, Graph Edit Distance convergence, and reverse diffusion step convergence:
+          </p>
+        </div>
+        <img class="teaser-img" src="./static/images/fig5_telemetry.svg" alt="FloorGen Results Dashboard">
+        <p class="mt-3 has-text-grey" style="font-size: 0.95rem; text-align: justify;">
+          <b>Figure 5:</b> Empirical telemetry tracking <i>(Top-Left)</i> coordinate denoising loss $\mathcal{L}_{\text{diff}}$, <i>(Top-Right)</i> FID diversity convergence across baselines, <i>(Bottom-Left)</i> Graph Edit Distance (GED) reduction, and <i>(Bottom-Right)</i> reverse diffusion step coordinate convergence ($T=30$).
+        </p>
+      </div>
+    </div>
+
+    <!-- Quantitative Baselines & Boxplots (Fig. 6) -->
+    <div class="columns is-centered has-text-centered mt-5">
+      <div class="column is-four-fifths">
+        <h2 class="title is-2">Quantitative Benchmark Comparisons &amp; $k$-Ablation</h2>
+        <div class="content has-text-justified">
+          <p>
+            Statistical comparison across baseline generative models and exemplar count ablations:
+          </p>
+        </div>
+        <img class="teaser-img" src="./static/images/fig6_benchmark_boxplots.svg" alt="Benchmark Boxplots">
+        <p class="mt-3 has-text-grey" style="font-size: 0.95rem; text-align: justify;">
+          <b>Figure 6:</b> <i>(a)</i> Architectural Realism Score distributions (FloorGen achieves $94.1\%$). <i>(b)</i> Graph Edit Distance distributions (FloorGen reduces GED to $0.18$). <i>(c)</i> FID score sensitivity across retrieved exemplar counts $k \in \{0, 1, 3, 5, 8, 10\}$.
+        </p>
+      </div>
+    </div>
+
+    <!-- Qualitative Execution Traces (Fig. 7) -->
+    <div class="columns is-centered has-text-centered mt-5">
+      <div class="column is-four-fifths">
+        <h2 class="title is-2">Qualitative Reverse Diffusion Execution Traces</h2>
+        <div class="content has-text-justified">
+          <p>
+            Step-by-step spatial execution timeline across reverse diffusion timesteps ($t=1000 \rightarrow 0$):
+          </p>
+        </div>
+        <img class="teaser-img" src="./static/images/fig7_spatial_traces.svg" alt="Qualitative Execution Traces">
+        <p class="mt-3 has-text-grey" style="font-size: 0.95rem; text-align: justify;">
+          <b>Figure 7:</b> Snapshots across reverse diffusion timesteps ($t=1000, 750, 500, 250, 0$) demonstrating initial Gaussian noise, coarse spatial clustering, topological formation, boundary snapping, and final Manhattan CAD vectorization with door placements.
+        </p>
+      </div>
+    </div>
+
+    <!-- Interactive Simulation Player -->
+    <div class="columns is-centered has-text-centered mt-5">
+      <div class="column is-four-fifths">
+        <h2 class="title is-2">Interactive Simulation Visualizer</h2>
+        <div class="content has-text-justified">
+          <p>
+            Scrub through reverse diffusion denoising frames in real-time to inspect coordinate transitions and dynamic room alignments:
+          </p>
+        </div>
+        <div class="simulation-container" style="width: 100%; height: 680px; max-height: 90vh; background: #080C16; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); overflow: hidden; position: relative;">
+          <iframe src="./static/floorgen_simulation_animation.html" title="FloorGen Simulation Animation" style="width: 100%; height: 100%; border: none; display: block;" loading="lazy"></iframe>
+        </div>
+        <div class="mt-4">
+          <a href="https://huggingface.co/spaces/mrinal22258/floorgen" target="_blank" rel="noopener noreferrer"
+             class="external-link button is-normal is-rounded is-dark">
+            <span class="icon"><i class="fas fa-robot"></i></span>
+            <span>Open Interactive Gradio App on Hugging Face Spaces</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Comprehensive Benchmark Evaluation Matrix -->
+<section class="section" id="benchmarks">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-2">Quantitative Benchmark Matrix</h2>
+        <div class="content has-text-justified">
+          <p>
+            Comparative quantitative evaluation across generative paradigms on the RPLAN test benchmark split ($N=10{,}788$ plans):
+          </p>
+        </div>
+        <table class="table is-fullwidth is-hoverable is-striped">
+          <thead>
+            <tr>
+              <th>Model Framework</th>
+              <th>Retrieval Prior</th>
+              <th class="has-text-centered">FID &darr;</th>
+              <th class="has-text-centered">KID (&times;10<sup>-3</sup>) &darr;</th>
+              <th class="has-text-centered">GED &darr;</th>
+              <th class="has-text-centered">Compatibility (%) &uarr;</th>
+              <th class="has-text-centered">Realism (%) &uarr;</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Graph2Plan</b> (TOG 2020)</td>
+              <td>Single Layout</td>
+              <td class="has-text-centered">41.5</td>
+              <td class="has-text-centered">24.80</td>
+              <td class="has-text-centered">2.15</td>
+              <td class="has-text-centered">28.4%</td>
+              <td class="has-text-centered">68.2%</td>
+            </tr>
+            <tr>
+              <td><b>FloorplanGAN</b> (AIC 2022)</td>
+              <td>None ($k=0$)</td>
+              <td class="has-text-centered">38.9</td>
+              <td class="has-text-centered">21.15</td>
+              <td class="has-text-centered">1.95</td>
+              <td class="has-text-centered">31.0%</td>
+              <td class="has-text-centered">71.0%</td>
+            </tr>
+            <tr>
+              <td><b>House-GAN++</b> (CVPR 2021)</td>
+              <td>None ($k=0$)</td>
+              <td class="has-text-centered">34.2</td>
+              <td class="has-text-centered">18.42</td>
+              <td class="has-text-centered">1.84</td>
+              <td class="has-text-centered">35.2%</td>
+              <td class="has-text-centered">74.5%</td>
+            </tr>
+            <tr>
+              <td><b>HouseDiffusion</b> (CVPR 2023)</td>
+              <td>None ($k=0$)</td>
+              <td class="has-text-centered">21.8</td>
+              <td class="has-text-centered">9.15</td>
+              <td class="has-text-centered">0.72</td>
+              <td class="has-text-centered">58.1%</td>
+              <td class="has-text-centered">83.2%</td>
+            </tr>
+            <tr>
+              <td><b>FloorGen</b> (Ablation, $k=1$)</td>
+              <td>Top-1 Dense</td>
+              <td class="has-text-centered">16.5</td>
+              <td class="has-text-centered">5.92</td>
+              <td class="has-text-centered">0.42</td>
+              <td class="has-text-centered">72.4%</td>
+              <td class="has-text-centered">88.4%</td>
+            </tr>
+            <tr>
+              <td><b>FloorGen</b> (Ablation, $k=3$)</td>
+              <td>Top-3 Hybrid</td>
+              <td class="has-text-centered">13.8</td>
+              <td class="has-text-centered">4.31</td>
+              <td class="has-text-centered">0.26</td>
+              <td class="has-text-centered">79.8%</td>
+              <td class="has-text-centered">91.5%</td>
+            </tr>
+            <tr style="background-color: #f5f5f5; font-weight: 600;">
+              <td><b>FloorGen (Full, $k=5$)</b></td>
+              <td><b>Top-5 Dual Store</b></td>
+              <td class="has-text-centered"><b>12.4</b></td>
+              <td class="has-text-centered"><b>3.80</b></td>
+              <td class="has-text-centered"><b>0.18</b></td>
+              <td class="has-text-centered"><b>84.7%</b></td>
+              <td class="has-text-centered"><b>94.1%</b></td>
+            </tr>
+            <tr style="background-color: #f5f5f5; font-weight: 600;">
+              <td><b>FloorGen (Extended, $k=10$)</b></td>
+              <td>Top-10 Dual Store</td>
+              <td class="has-text-centered">12.0</td>
+              <td class="has-text-centered">3.65</td>
+              <td class="has-text-centered">0.16</td>
+              <td class="has-text-centered">85.9%</td>
+              <td class="has-text-centered">94.6%</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size: 0.9rem; color: #7a7a7a; margin-top: 0.5rem; text-align: justify;">
+          <b>Table I:</b> Quantitative synthesis performance across $10{,}788$ test plans. FloorGen consistently outperforms GAN and unconstrained diffusion baselines in distribution diversity (FID/KID), topological graph fidelity (GED), and architectural realism.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BibTeX Section -->
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+      <h2 class="title mb-0">BibTeX</h2>
+      <button id="copy-bibtex-btn" class="button is-small is-rounded is-outlined is-dark">
+        <span class="icon"><i class="fas fa-copy"></i></span>
+        <span>Copy BibTeX</span>
+      </button>
+    </div>
+    <p style="color: #7a7a7a; font-size: 0.95rem; margin-bottom: 0.75rem;">
+      <i>Official citation details will be updated once the peer-reviewed paper is formally published.</i>
+    </p>
+    <pre><code id="bibtex-code">@article{mrinal2026floorgen,
+  author  = {Mrinal, Kumar},
+  title   = {FloorGen: Retrieval-Augmented Generative Floorplan Synthesis with Topological Graph-Vector Dual Stores and Continuous Diffusion},
+  journal = {Preprint / Working Paper (Under Review for IEEE Transactions on Visualization and Computer Graphics)},
+  year    = {2026},
+  url     = {https://github.com/mrinal22258/floorgen}
+}</code></pre>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <a class="icon-link"
+         href="./paper.pdf" target="_blank" rel="noopener noreferrer" title="Paper PDF">
+        <i class="fas fa-file-pdf"></i>
+      </a>
+      <a class="icon-link"
+         href="./paper.tex" target="_blank" rel="noopener noreferrer" title="LaTeX Source">
+        <i class="fas fa-file-code"></i>
+      </a>
+      <a class="icon-link external-link" href="https://github.com/mrinal22258/floorgen" target="_blank" rel="noopener noreferrer" title="GitHub Repository">
+        <i class="fab fa-github"></i>
+      </a>
+      <a class="icon-link external-link" href="https://huggingface.co/spaces/mrinal22258/floorgen" target="_blank" rel="noopener noreferrer" title="HuggingFace Space">
+        <i class="fas fa-robot"></i>
+      </a>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content has-text-centered">
+          <p style="color: #7a7a7a; font-size: 0.9rem;">
+            FloorGen &bull; Kumar Mrinal &bull; Department of Computer Science and Artificial Intelligence, IIIT Delhi, India
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

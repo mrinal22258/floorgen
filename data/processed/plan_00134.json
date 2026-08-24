@@ -1,0 +1,399 @@
+{
+  "id": "plan_00134",
+  "archetype": "3B2B_courtyard_townhouse",
+  "category": "townhouse_courtyard",
+  "target_occupancy": "3-5 persons",
+  "total_area_sqm": 4459.6,
+  "total_area_sqft": 48003,
+  "description": "Courtyard-oriented townhouse floorplan where all primary living spaces surround a central light well, creating superior natural lighting and quiet private bedrooms.",
+  "spatial_reasoning": "Centripetal orientation focusing private view corridors inward toward the courtyard balcony for enhanced urban acoustic tranquility.",
+  "num_rooms": 8,
+  "boundary": [
+    [
+      9.9,
+      15.3
+    ],
+    [
+      241.4,
+      15.3
+    ],
+    [
+      241.4,
+      268.7
+    ],
+    [
+      9.9,
+      268.7
+    ]
+  ],
+  "rooms": [
+    {
+      "id": 0,
+      "category": "entrance",
+      "category_id": 6,
+      "zone": "transition",
+      "polygon": [
+        [
+          14.6,
+          19.3
+        ],
+        [
+          90.1,
+          19.3
+        ],
+        [
+          90.1,
+          95.9
+        ],
+        [
+          14.6,
+          95.9
+        ]
+      ],
+      "bbox": [
+        14.6,
+        19.3,
+        90.1,
+        95.9
+      ],
+      "centroid": [
+        52.3,
+        57.6
+      ],
+      "area": 5783.3
+    },
+    {
+      "id": 1,
+      "category": "living_room",
+      "category_id": 0,
+      "zone": "public",
+      "polygon": [
+        [
+          90.4,
+          21.9
+        ],
+        [
+          237.4,
+          21.9
+        ],
+        [
+          237.4,
+          132.8
+        ],
+        [
+          90.4,
+          132.8
+        ]
+      ],
+      "bbox": [
+        90.4,
+        21.9,
+        237.4,
+        132.8
+      ],
+      "centroid": [
+        163.9,
+        77.4
+      ],
+      "area": 16302.3
+    },
+    {
+      "id": 2,
+      "category": "kitchen",
+      "category_id": 4,
+      "zone": "service",
+      "polygon": [
+        [
+          13.9,
+          94.5
+        ],
+        [
+          89.9,
+          94.5
+        ],
+        [
+          89.9,
+          166.0
+        ],
+        [
+          13.9,
+          166.0
+        ]
+      ],
+      "bbox": [
+        13.9,
+        94.5,
+        89.9,
+        166.0
+      ],
+      "centroid": [
+        51.9,
+        130.2
+      ],
+      "area": 5434.0
+    },
+    {
+      "id": 3,
+      "category": "dining_room",
+      "category_id": 7,
+      "zone": "public",
+      "polygon": [
+        [
+          15.5,
+          167.4
+        ],
+        [
+          90.2,
+          167.4
+        ],
+        [
+          90.2,
+          241.7
+        ],
+        [
+          15.5,
+          241.7
+        ]
+      ],
+      "bbox": [
+        15.5,
+        167.4,
+        90.2,
+        241.7
+      ],
+      "centroid": [
+        52.9,
+        204.6
+      ],
+      "area": 5550.2
+    },
+    {
+      "id": 4,
+      "category": "balcony",
+      "category_id": 5,
+      "zone": "outdoor",
+      "polygon": [
+        [
+          88.3,
+          130.2
+        ],
+        [
+          163.0,
+          130.2
+        ],
+        [
+          163.0,
+          202.1
+        ],
+        [
+          88.3,
+          202.1
+        ]
+      ],
+      "bbox": [
+        88.3,
+        130.2,
+        163.0,
+        202.1
+      ],
+      "centroid": [
+        125.7,
+        166.1
+      ],
+      "area": 5370.9
+    },
+    {
+      "id": 5,
+      "category": "master_bedroom",
+      "category_id": 1,
+      "zone": "private",
+      "polygon": [
+        [
+          160.9,
+          128.8
+        ],
+        [
+          236.5,
+          128.8
+        ],
+        [
+          236.5,
+          240.4
+        ],
+        [
+          160.9,
+          240.4
+        ]
+      ],
+      "bbox": [
+        160.9,
+        128.8,
+        236.5,
+        240.4
+      ],
+      "centroid": [
+        198.7,
+        184.6
+      ],
+      "area": 8437.0
+    },
+    {
+      "id": 6,
+      "category": "second_bedroom",
+      "category_id": 2,
+      "zone": "private",
+      "polygon": [
+        [
+          91.1,
+          202.2
+        ],
+        [
+          162.8,
+          202.2
+        ],
+        [
+          162.8,
+          264.6
+        ],
+        [
+          91.1,
+          264.6
+        ]
+      ],
+      "bbox": [
+        91.1,
+        202.2,
+        162.8,
+        264.6
+      ],
+      "centroid": [
+        127.0,
+        233.4
+      ],
+      "area": 4474.1
+    },
+    {
+      "id": 7,
+      "category": "bathroom",
+      "category_id": 3,
+      "zone": "service",
+      "polygon": [
+        [
+          15.6,
+          206.2
+        ],
+        [
+          90.7,
+          206.2
+        ],
+        [
+          90.7,
+          264.7
+        ],
+        [
+          15.6,
+          264.7
+        ]
+      ],
+      "bbox": [
+        15.6,
+        206.2,
+        90.7,
+        264.7
+      ],
+      "centroid": [
+        53.1,
+        235.4
+      ],
+      "area": 4393.4
+    }
+  ],
+  "adjacency": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      1,
+      5
+    ],
+    [
+      4,
+      6
+    ],
+    [
+      3,
+      7
+    ]
+  ],
+  "doors": [
+    {
+      "room_a": 0,
+      "room_b": 1,
+      "pos": [
+        108.1,
+        67.5
+      ]
+    },
+    {
+      "room_a": 0,
+      "room_b": 2,
+      "pos": [
+        52.1,
+        93.9
+      ]
+    },
+    {
+      "room_a": 2,
+      "room_b": 3,
+      "pos": [
+        52.4,
+        167.4
+      ]
+    },
+    {
+      "room_a": 1,
+      "room_b": 4,
+      "pos": [
+        144.8,
+        121.8
+      ]
+    },
+    {
+      "room_a": 1,
+      "room_b": 5,
+      "pos": [
+        181.3,
+        131.0
+      ]
+    },
+    {
+      "room_a": 4,
+      "room_b": 6,
+      "pos": [
+        126.3,
+        199.8
+      ]
+    },
+    {
+      "room_a": 3,
+      "room_b": 7,
+      "pos": [
+        53.0,
+        220.0
+      ]
+    }
+  ]
+}

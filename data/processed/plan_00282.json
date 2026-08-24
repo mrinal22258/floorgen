@@ -1,0 +1,317 @@
+{
+  "id": "plan_00282",
+  "archetype": "1B1B_micro_loft",
+  "category": "compact_studio",
+  "target_occupancy": "1-2 persons",
+  "total_area_sqm": 4960.2,
+  "total_area_sqft": 53391,
+  "description": "High-efficiency 1-bedroom studio apartment designed for modern metropolitan living with flowing open kitchen, living lounge, designated bathroom, and private balcony.",
+  "spatial_reasoning": "Open-plan multifunctional spatial zoning maximizing spatial perception within a compact footprint.",
+  "num_rooms": 6,
+  "boundary": [
+    [
+      15.8,
+      14.100000000000001
+    ],
+    [
+      243.7,
+      14.100000000000001
+    ],
+    [
+      243.7,
+      328.7
+    ],
+    [
+      15.8,
+      328.7
+    ]
+  ],
+  "rooms": [
+    {
+      "id": 0,
+      "category": "entrance",
+      "category_id": 6,
+      "zone": "transition",
+      "polygon": [
+        [
+          19.8,
+          18.8
+        ],
+        [
+          130.0,
+          18.8
+        ],
+        [
+          130.0,
+          102.9
+        ],
+        [
+          19.8,
+          102.9
+        ]
+      ],
+      "bbox": [
+        19.8,
+        18.8,
+        130.0,
+        102.9
+      ],
+      "centroid": [
+        74.9,
+        60.9
+      ],
+      "area": 9267.8
+    },
+    {
+      "id": 1,
+      "category": "kitchen",
+      "category_id": 4,
+      "zone": "service",
+      "polygon": [
+        [
+          22.3,
+          101.6
+        ],
+        [
+          129.8,
+          101.6
+        ],
+        [
+          129.8,
+          234.1
+        ],
+        [
+          22.3,
+          234.1
+        ]
+      ],
+      "bbox": [
+        22.3,
+        101.6,
+        129.8,
+        234.1
+      ],
+      "centroid": [
+        76.1,
+        167.8
+      ],
+      "area": 14243.8
+    },
+    {
+      "id": 2,
+      "category": "living_room",
+      "category_id": 0,
+      "zone": "public",
+      "polygon": [
+        [
+          133.3,
+          18.1
+        ],
+        [
+          237.6,
+          18.1
+        ],
+        [
+          237.6,
+          146.6
+        ],
+        [
+          133.3,
+          146.6
+        ]
+      ],
+      "bbox": [
+        133.3,
+        18.1,
+        237.6,
+        146.6
+      ],
+      "centroid": [
+        185.4,
+        82.3
+      ],
+      "area": 13402.5
+    },
+    {
+      "id": 3,
+      "category": "master_bedroom",
+      "category_id": 1,
+      "zone": "private",
+      "polygon": [
+        [
+          134.0,
+          151.8
+        ],
+        [
+          239.5,
+          151.8
+        ],
+        [
+          239.5,
+          238.6
+        ],
+        [
+          134.0,
+          238.6
+        ]
+      ],
+      "bbox": [
+        134.0,
+        151.8,
+        239.5,
+        238.6
+      ],
+      "centroid": [
+        186.8,
+        195.2
+      ],
+      "area": 9157.4
+    },
+    {
+      "id": 4,
+      "category": "bathroom",
+      "category_id": 3,
+      "zone": "service",
+      "polygon": [
+        [
+          22.9,
+          233.8
+        ],
+        [
+          130.7,
+          233.8
+        ],
+        [
+          130.7,
+          324.7
+        ],
+        [
+          22.9,
+          324.7
+        ]
+      ],
+      "bbox": [
+        22.9,
+        233.8,
+        130.7,
+        324.7
+      ],
+      "centroid": [
+        76.8,
+        279.2
+      ],
+      "area": 9799.0
+    },
+    {
+      "id": 5,
+      "category": "balcony",
+      "category_id": 5,
+      "zone": "outdoor",
+      "polygon": [
+        [
+          130.6,
+          237.4
+        ],
+        [
+          239.7,
+          237.4
+        ],
+        [
+          239.7,
+          293.6
+        ],
+        [
+          130.6,
+          293.6
+        ]
+      ],
+      "bbox": [
+        130.6,
+        237.4,
+        239.7,
+        293.6
+      ],
+      "centroid": [
+        185.1,
+        265.5
+      ],
+      "area": 6131.4
+    }
+  ],
+  "adjacency": [
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      3,
+      5
+    ]
+  ],
+  "doors": [
+    {
+      "room_a": 0,
+      "room_b": 1,
+      "pos": [
+        75.5,
+        114.4
+      ]
+    },
+    {
+      "room_a": 0,
+      "room_b": 2,
+      "pos": [
+        130.2,
+        71.6
+      ]
+    },
+    {
+      "room_a": 1,
+      "room_b": 2,
+      "pos": [
+        130.8,
+        125.1
+      ]
+    },
+    {
+      "room_a": 2,
+      "room_b": 3,
+      "pos": [
+        186.1,
+        138.8
+      ]
+    },
+    {
+      "room_a": 1,
+      "room_b": 4,
+      "pos": [
+        76.4,
+        223.5
+      ]
+    },
+    {
+      "room_a": 3,
+      "room_b": 5,
+      "pos": [
+        185.9,
+        230.3
+      ]
+    }
+  ]
+}
