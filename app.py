@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     # 2. Import demo and theme
     from floorgen.demo.app import create_demo
-    from floorgen.demo.theme import get_ocean_depth_theme, OCEAN_DEPTH_HEAD_SCRIPT, OCEAN_DEPTH_CSS
+    from floorgen.demo.theme import get_rose_quartz_theme, ROSE_QUARTZ_HEAD_SCRIPT, ROSE_QUARTZ_CSS
 
     print("  [FloorGen] Building Studio Interface...")
     demo = create_demo()
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=7860,
         inbrowser=False,
-        theme=get_ocean_depth_theme(),
-        css=OCEAN_DEPTH_CSS,
-        head=OCEAN_DEPTH_HEAD_SCRIPT
+        theme=get_rose_quartz_theme(),
+        css=ROSE_QUARTZ_CSS,
+        head=ROSE_QUARTZ_HEAD_SCRIPT
     )

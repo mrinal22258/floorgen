@@ -1235,3 +1235,5 @@ def get_rose_quartz_theme() -> gr.Theme:
 
 
 get_ocean_depth_theme = get_rose_quartz_theme
+OCEAN_DEPTH_CSS = ROSE_QUARTZ_CSS
+OCEAN_DEPTH_HEAD_SCRIPT = ROSE_QUARTZ_HEAD_SCRIPT
