@@ -13,11 +13,10 @@ license: mit
 # FloorGen: Production-Grade Retrieval-Augmented Vector Floorplan Synthesis
 
 **Author**: **Kumar Mrinal** ([@mrinal22258](https://github.com/mrinal22258))  
-**Status**: *Preprint — Under Review for IEEE Transactions on Visualization and Computer Graphics (TVCG), 2026*  
-**Version**: `1.3.0` (Production SOTA Multi-Stage Pipeline & Autonomous Master Runner)
+**Version**: `1.3.0` (Production SOTA Multi-Stage Pipeline & Autonomous Master Runner)  
+**Paper**: [Read Research Paper & Formal Architecture (PDF)](paper.pdf)
 
-[![status](https://img.shields.io/badge/status-preprint--under--review-blue)](#)
-[![paper](https://img.shields.io/badge/Preprint-PDF-red)](paper.pdf)
+[![paper](https://img.shields.io/badge/Research_Paper-PDF-red)](paper.pdf)
 [![license](https://img.shields.io/badge/license-MIT-lightgrey)](#)
 [![FastAPI](https://img.shields.io/badge/FastAPI-v1.3.0-009688?logo=fastapi)](http://localhost:8000/docs)
 [![Docker](https://img.shields.io/badge/Docker-CUDA_Ready-2496ED?logo=docker)](#-containerization--docker)
@@ -35,7 +34,7 @@ FloorGen continuous coordinate diffusion converges from pure Gaussian noise into
 
 <div align="center">
   <img src="diffusion_synthesis.gif" alt="FloorGen Continuous Reverse Diffusion Trajectory" width="480px" style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.25);" />
-  <p><em>Real model inference trajectory recorded across 20 accelerated DDIM denoising steps.</em></p>
+  <p><em>Real model reverse coordinate diffusion trajectory: Gaussian noise → RAG cross-attention conditioning → Manhattan CAD layout regularized by Google OR-Tools CP-SAT.</em></p>
 </div>
 
 ---
@@ -241,12 +240,11 @@ Executes all 53 unit, integration, and remediation tests across data pipelines, 
 ## 📖 Citation
 
 ```bibtex
-@article{mrinal2026floorgen,
+@misc{mrinal2026floorgen,
   title={FloorGen: Retrieval-Augmented Generative Floorplan Synthesis with Topological Graph-Vector Dual Stores, Continuous Coordinate Diffusion, and Combinatorial Constraint Regularization},
   author={Mrinal, Kumar},
-  journal={Preprint (Under Review for IEEE Transactions on Visualization and Computer Graphics)},
   year={2026},
-  url={https://github.com/mrinal22258/floorgen}
+  howpublished={\url{https://github.com/mrinal22258/floorgen}}
 }
 ```
 
