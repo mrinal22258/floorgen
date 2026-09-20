@@ -2,7 +2,7 @@
 title: FloorGen - Retrieval-Augmented Generative Floorplan Synthesis
 emoji: 🏛️
 colorFrom: blue
-colorTo: cyan
+colorTo: purple
 sdk: gradio
 sdk_version: 4.44.0
 app_file: app.py
