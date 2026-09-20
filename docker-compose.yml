@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+  floorgen-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: floorgen-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - FLOORGEN_HOST=0.0.0.0
+      - FLOORGEN_PORT=8000
+      - FLOORGEN_DEVICE=cuda
+      - FLOORGEN_LOG_LEVEL=INFO
+      - FLOORGEN_DATA_DIR=/app/data/processed
+      - FLOORGEN_CHECKPOINT=/app/checkpoints/rag_diffusion.pt
+    volumes:
+      - ./data/processed:/app/data/processed:ro
+      - ./checkpoints:/app/checkpoints:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

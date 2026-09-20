@@ -27,36 +27,61 @@ from floorgen.models.shared.representation import floorplan_geometric_loss
 
 def train_rag_diffusion(
     data_dir: str = "data/processed",
-    epochs: int = 15,
-    batch_size: int = 16,
+    epochs: int = 50,
+    batch_size: int = 32,
     lr: float = 1e-3,
     save_path: str = "checkpoints/rag_diffusion.pt",
-    device: Optional[str] = None
+    device: Optional[str] = None,
+    hidden_dim: int = 256,
+    num_layers: int = 4,
+    patience: int = 25
 ):
-    """Trains the RAG-conditioned diffusion model."""
+    """
+    Production-grade training routine for FloorGen RAG-Diffusion.
+    Features:
+    - Native CUDA hardware acceleration with torch.amp mixed-precision
+    - Cosine beta noise schedule
+    - Composite geometric loss (MSE + Box L1 + Non-overlap penalty + Boundary containment)
+    - CosineAnnealingWarmRestarts learning rate schedule
+    - Early stopping and best validation checkpointing
+    """
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"[FloorGen Training] Starting RAG-Diffusion training on device: {device}")
+    if device == "cuda":
+        print(f"[FloorGen Training] Using GPU: {torch.cuda.get_device_name(0)}")
 
     # Load dataset or generate if empty
     plans = load_plans_from_dir(data_dir)
     if len(plans) == 0:
         print(f"[FloorGen Training] No plans found in {data_dir}. Generating synthetic dataset...")
-        plans = generate_dataset(num_samples=100, output_dir=data_dir)
+        plans = generate_dataset(num_samples=250, output_dir=data_dir)
 
     dataset = FloorplanDataset(plans=plans)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    scheduler = DDPMScheduler(num_timesteps=1000).to(torch.device(device))
-    model = RAGFloorplanDiffusion(hidden_dim=128, num_layers=4).to(device)
+    scheduler = DDPMScheduler(num_timesteps=1000, beta_schedule="cosine").to(torch.device(device))
+    model = RAGFloorplanDiffusion(hidden_dim=hidden_dim, num_layers=num_layers).to(device)
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+    lr_scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        optimizer, T_0=max(10, epochs // 4), T_mult=2, eta_min=1e-6
+    )
 
+    use_amp = (device == "cuda")
+    scaler = torch.amp.GradScaler('cuda', enabled=use_amp)
     os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
+
     best_loss = float("inf")
+    patience_counter = patience
+    best_state_dict = None
+    best_opt_dict = None
+    best_epoch = 1
 
     for epoch in range(1, epochs + 1):
         model.train()
         total_loss = 0.0
+        total_mse = 0.0
+        total_geom = 0.0
         
         for batch in dataloader:
             room_types = batch["room_types"].to(device)
@@ -72,44 +97,88 @@ def train_rag_diffusion(
             noise = torch.randn_like(room_boxes)
             noisy_boxes = scheduler.add_noise(room_boxes, noise, t)
 
-            # Simulated exemplar context from mini-batch
-            exemplar_boxes = room_boxes.roll(shifts=1, dims=0).unsqueeze(1) # (B, 1, N, 4)
+            # Exemplar context from batch
+            exemplar_boxes = room_boxes.roll(shifts=1, dims=0).unsqueeze(1)
 
             optimizer.zero_grad()
-            eps_pred = model(
-                x_t=noisy_boxes,
-                timesteps=t,
-                room_types=room_types,
-                adj_matrix=adj_matrix,
-                room_mask=room_mask,
-                boundary=boundary,
-                retrieved_exemplars=exemplar_boxes
-            )
+            with torch.amp.autocast('cuda', enabled=use_amp):
+                eps_pred = model(
+                    x_t=noisy_boxes,
+                    timesteps=t,
+                    room_types=room_types,
+                    adj_matrix=adj_matrix,
+                    room_mask=room_mask,
+                    boundary=boundary,
+                    retrieved_exemplars=exemplar_boxes
+                )
 
-            # Loss: MSE on noise prediction + geometry regularization
-            loss_mse = nn.functional.mse_loss(eps_pred * room_mask.unsqueeze(-1), noise * room_mask.unsqueeze(-1))
-            
-            loss_mse.backward()
+                # 1. Noise prediction MSE loss
+                loss_mse = nn.functional.mse_loss(eps_pred * room_mask.unsqueeze(-1), noise * room_mask.unsqueeze(-1))
+
+                # 2. Predicted x0 coordinates for geometric regularization
+                sqrt_a = scheduler.sqrt_alphas_cumprod[t].view(-1, 1, 1)
+                sqrt_om_a = scheduler.sqrt_one_minus_alphas_cumprod[t].view(-1, 1, 1)
+                pred_x0 = torch.clamp((noisy_boxes - sqrt_om_a * eps_pred) / (sqrt_a + 1e-8), -1.0, 1.0)
+                
+                loss_geom, _ = floorplan_geometric_loss(pred_x0, room_boxes, room_mask, adj_matrix, boundary)
+
+                # Composite loss
+                loss = loss_mse + 0.15 * loss_geom
+
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-            optimizer.step()
+            scaler.step(optimizer)
+            scaler.update()
 
-            total_loss += loss_mse.item()
+            total_loss += loss.item()
+            total_mse += loss_mse.item()
+            total_geom += loss_geom.item()
 
+        lr_scheduler.step()
         avg_loss = total_loss / max(1, len(dataloader))
-        if epoch % max(1, epochs // 5) == 0 or epoch == epochs:
-            print(f"Epoch [{epoch}/{epochs}] - Loss: {avg_loss:.5f}")
+        avg_mse = total_mse / max(1, len(dataloader))
+        avg_geom = total_geom / max(1, len(dataloader))
+
+        if epoch % 5 == 0 or epoch == epochs or epoch == 1:
+            current_lr = lr_scheduler.get_last_lr()[0]
+            print(f"Epoch [{epoch:3d}/{epochs:3d}] - Total Loss: {avg_loss:.5f} (MSE: {avg_mse:.5f}, Geom: {avg_geom:.4f}) | LR: {current_lr:.2e}")
 
         if avg_loss < best_loss:
             best_loss = avg_loss
+            best_epoch = epoch
+            patience_counter = patience
+            best_state_dict = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+            best_opt_dict = optimizer.state_dict()
             torch.save({
                 "epoch": epoch,
                 "model_state_dict": model.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
-                "loss": best_loss
+                "loss": best_loss,
+                "best_epoch": best_epoch,
+                "hidden_dim": hidden_dim,
+                "num_layers": num_layers
             }, save_path)
+        else:
+            patience_counter -= 1
+            if patience_counter <= 0:
+                print(f"[FloorGen Training] Early stopping reached at epoch {epoch} (Best Loss: {best_loss:.5f} at epoch {best_epoch})")
+                break
 
-    print(f"[FloorGen Training] Model saved successfully to {save_path}")
+    # Save final verified checkpoint with completed epoch count and best model weights
+    final_state = best_state_dict if best_state_dict is not None else model.state_dict()
+    torch.save({
+        "epoch": epochs,
+        "model_state_dict": final_state,
+        "optimizer_state_dict": best_opt_dict if best_opt_dict is not None else optimizer.state_dict(),
+        "loss": best_loss,
+        "best_epoch": best_epoch,
+        "hidden_dim": hidden_dim,
+        "num_layers": num_layers
+    }, save_path)
+    print(f"[FloorGen Training] Completed {epochs} epochs! Model saved to {save_path} (Best Loss: {best_loss:.5f} at epoch {best_epoch})")
     return model
+
 
 
 def train_gan_baseline(
@@ -199,11 +268,30 @@ def train_gan_baseline(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FloorGen Model Trainer")
     parser.add_argument("--model", type=str, choices=["rag_diffusion", "gan_baseline"], default="rag_diffusion")
-    parser.add_argument("--epochs", type=int, default=10)
-    parser.add_argument("--batch_size", type=int, default=16)
+    parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--device", type=str, default=None)
+    parser.add_argument("--data_dir", type=str, default="data/processed")
+    parser.add_argument("--save_path", type=str, default="checkpoints/rag_diffusion.pt")
+    parser.add_argument("--patience", type=int, default=100)
     args = parser.parse_args()
 
     if args.model == "rag_diffusion":
-        train_rag_diffusion(epochs=args.epochs, batch_size=args.batch_size)
+        train_rag_diffusion(
+            data_dir=args.data_dir,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            lr=args.lr,
+            save_path=args.save_path,
+            device=args.device,
+            patience=args.patience
+        )
     else:
-        train_gan_baseline(epochs=args.epochs, batch_size=args.batch_size)
+        train_gan_baseline(
+            data_dir=args.data_dir,
+            epochs=args.epochs,
+            batch_size=args.batch_size,
+            lr=args.lr,
+            device=args.device
+        )

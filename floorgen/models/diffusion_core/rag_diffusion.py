@@ -29,7 +29,7 @@ class RAGFloorplanDiffusion(nn.Module):
         self,
         coord_dim: int = 4,
         num_room_types: int = 10,
-        hidden_dim: int = 192,
+        hidden_dim: int = 256,
         context_dim: int = 128,
         num_layers: int = 4,
         num_heads: int = 4
@@ -133,6 +133,16 @@ class RAGFloorplanDiffusion(nn.Module):
         eps_pred = self.out_head(h)
         return eps_pred * room_mask.unsqueeze(-1).float()
 
+    def _format_boxes(self, coords: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        """Converts raw model coordinates to canonical [xmin, ymin, xmax, ymax] bounded boxes."""
+        xmin = torch.min(coords[..., 0], coords[..., 2])
+        xmax = torch.max(coords[..., 0], coords[..., 2]) + 0.05
+        ymin = torch.min(coords[..., 1], coords[..., 3])
+        ymax = torch.max(coords[..., 1], coords[..., 3]) + 0.05
+        out_boxes = torch.stack([xmin, ymin, xmax, ymax], dim=-1)
+        out_boxes = torch.clamp(out_boxes, -1.0, 1.0)
+        return out_boxes * mask.unsqueeze(-1).float()
+
     @torch.no_grad()
     def sample(
         self,
@@ -142,20 +152,28 @@ class RAGFloorplanDiffusion(nn.Module):
         room_mask: torch.Tensor,
         boundary: Optional[torch.Tensor] = None,
         retrieved_exemplars: Optional[torch.Tensor] = None,
-        num_inference_steps: int = 50
-    ) -> torch.Tensor:
+        num_inference_steps: int = 30,
+        method: str = "ddim",
+        eta: float = 0.0,
+        return_intermediates: bool = False
+    ):
         """
         Runs reverse diffusion sampling starting from standard normal Gaussian noise.
+        Supports both fast deterministic DDIM (10-30 steps) and standard DDPM (100+ steps).
+        If return_intermediates=True, returns (final_boxes, intermediate_boxes_list).
         """
         B, N = room_types.shape
         device = room_types.device
         x = torch.randn((B, N, self.coord_dim), device=device)
 
-        # Step stride for fast DDIM/DDPM inference
+        intermediates = []
+        if return_intermediates:
+            intermediates.append(self._format_boxes(x, room_mask))
+
         step_stride = max(1, scheduler.num_timesteps // num_inference_steps)
         timesteps = list(range(0, scheduler.num_timesteps, step_stride))[::-1]
 
-        for t_val in timesteps:
+        for i, t_val in enumerate(timesteps):
             t_tensor = torch.full((B,), t_val, device=device, dtype=torch.long)
             eps_pred = self.forward(
                 x_t=x,
@@ -166,14 +184,42 @@ class RAGFloorplanDiffusion(nn.Module):
                 boundary=boundary,
                 retrieved_exemplars=retrieved_exemplars
             )
-            x = scheduler.step(eps_pred, t_val, x)
+            if method == "ddim":
+                t_prev = timesteps[i + 1] if i + 1 < len(timesteps) else -1
+                x = scheduler.ddim_step(eps_pred, t_val, t_prev, x, eta=eta)
+            else:
+                x = scheduler.step(eps_pred, t_val, x)
 
-        # Ensure canonical bounding box coordinates [xmin, ymin, xmax, ymax]
-        xmin = torch.min(x[..., 0], x[..., 2])
-        xmax = torch.max(x[..., 0], x[..., 2]) + 0.05
-        ymin = torch.min(x[..., 1], x[..., 3])
-        ymax = torch.max(x[..., 1], x[..., 3]) + 0.05
+            if return_intermediates:
+                intermediates.append(self._format_boxes(x, room_mask))
 
-        out_boxes = torch.stack([xmin, ymin, xmax, ymax], dim=-1)
-        out_boxes = torch.clamp(out_boxes, -1.0, 1.0)
-        return out_boxes * room_mask.unsqueeze(-1).float()
+        out_boxes = self._format_boxes(x, room_mask)
+        if return_intermediates:
+            return out_boxes, intermediates
+        return out_boxes
+
+    @torch.no_grad()
+    def sample_ddim(
+        self,
+        scheduler: DDPMScheduler,
+        room_types: torch.Tensor,
+        adj_matrix: torch.Tensor,
+        room_mask: torch.Tensor,
+        boundary: Optional[torch.Tensor] = None,
+        retrieved_exemplars: Optional[torch.Tensor] = None,
+        num_inference_steps: int = 20,
+        return_intermediates: bool = False
+    ):
+        """Convenience wrapper for fast deterministic DDIM sampling (15-25 steps)."""
+        return self.sample(
+            scheduler=scheduler,
+            room_types=room_types,
+            adj_matrix=adj_matrix,
+            room_mask=room_mask,
+            boundary=boundary,
+            retrieved_exemplars=retrieved_exemplars,
+            num_inference_steps=num_inference_steps,
+            method="ddim",
+            eta=0.0,
+            return_intermediates=return_intermediates
+        )

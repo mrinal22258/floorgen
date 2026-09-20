@@ -1,199 +1,120 @@
 """
-FloorGen Cloud Demo Platform (Hugging Face Spaces).
-Interactive Gradio application for Retrieval-Augmented Generative Floorplan Synthesis.
+FloorGen Interactive Web Demonstration Platform.
+Unified master entry point interfacing directly with the FloorGen generative pipeline,
+retrieval-augmented exemplar grounding, CP-SAT constraint satisfaction, and BIM exporter.
+
+Automatically prepares the runtime environment, starts local background services (Ollama Qwen),
+verifies checkpoints, and launches the web studio in a single command:
+    python app.py
 """
 
+import sys
 import os
-import json
-import numpy as np
-import gradio as gr
-from typing import Tuple, List
+import time
+import shutil
+import subprocess
+import urllib.request
+from pathlib import Path
 
-# Room definitions and default palettes
-ROOM_PALETTE = {
-    "Living Room": {"fill": "#DBEAFE", "stroke": "#2563EB", "box": [75, 55, 185, 175]},
-    "Master Bedroom": {"fill": "#FEF3C7", "stroke": "#D97706", "box": [185, 55, 245, 135]},
-    "Second Bedroom": {"fill": "#FEF9C3", "stroke": "#CA8A04", "box": [185, 135, 245, 215]},
-    "Bathroom": {"fill": "#CCFBF1", "stroke": "#0D9488", "box": [15, 135, 75, 210]},
-    "Kitchen": {"fill": "#FFEDD5", "stroke": "#EA580C", "box": [15, 55, 75, 135]},
-    "Balcony": {"fill": "#DCFCE7", "stroke": "#16A34A", "box": [75, 175, 185, 220]},
-    "Dining Room": {"fill": "#EDE9FE", "stroke": "#7C3AED", "box": [75, 25, 140, 55]},
-    "Study / Office": {"fill": "#F1F5F9", "stroke": "#475569", "box": [140, 25, 185, 55]}
-}
+# Safe terminal encoding on Windows
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+# Ensure repository root is on sys.path
+REPO_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(REPO_ROOT))
 
-def render_svg_floorplan(selected_rooms: List[str], step_val: int, mode: str, k_val: int) -> str:
-    """Renders regularized SVG CAD floorplan based on diffusion progress and constraints."""
-    progress = step_val / 30.0
-    noise = (1.0 - progress) * 35.0
-    
-    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 250" width="100%" height="420" style="background-color: #FAFAFA; font-family: 'Plus Jakarta Sans', sans-serif; border-radius: 12px; box-shadow: inset 0 0 15px rgba(0,0,0,0.05);">
-    <polygon points="10,20 250,20 250,230 10,230" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.8" stroke-dasharray="4,4"/>'''
-
-    active_rooms = [r for r in selected_rooms if r in ROOM_PALETTE]
-    if not active_rooms:
-        active_rooms = ["Living Room", "Master Bedroom", "Bathroom", "Kitchen"]
-
-    for idx, r_name in enumerate(active_rooms):
-        p = ROOM_PALETTE[r_name]
-        b = p["box"]
-
-        # Jitter based on mode & progress
-        jitter_scale = 1.0 if mode == "FloorGen RAG-Diffusion (Ours)" else 2.2
-        jx1 = np.sin(idx * 2.1 + (1.0 - progress) * 7.0) * noise * jitter_scale
-        jy1 = np.cos(idx * 3.2 + (1.0 - progress) * 7.0) * noise * jitter_scale
-        jx2 = np.cos(idx * 4.3 + (1.0 - progress) * 7.0) * noise * jitter_scale
-        jy2 = np.sin(idx * 5.4 + (1.0 - progress) * 7.0) * noise * jitter_scale
-
-        x1 = max(10, min(240, b[0] + jx1))
-        y1 = max(20, min(215, b[1] + jy1))
-        x2 = max(x1 + 14, min(250, b[2] + jx2))
-        y2 = max(y1 + 14, min(230, b[3] + jy2))
-
-        w = x2 - x1
-        h = y2 - y1
-        alpha = 0.35 + 0.65 * progress
-        stroke_w = 2.4 if progress > 0.8 else 1.5
-
-        svg += f'''<rect x="{x1:.1f}" y="{y1:.1f}" width="{w:.1f}" height="{h:.1f}" fill="{p['fill']}" stroke="{p['stroke']}" stroke-width="{stroke_w}" fill-opacity="{alpha:.2f}"/>'''
-        
-        if progress > 0.35:
-            cx = (x1 + x2) / 2
-            cy = (y1 + y2) / 2
-            area_sqft = int(w * h * 0.42)
-            svg += f'''<text x="{cx:.1f}" y="{cy - 3:.1f}" text-anchor="middle" font-size="7.5" font-weight="700" fill="#0F172A">{r_name.upper()}</text>
-            <text x="{cx:.1f}" y="{cy + 8:.1f}" text-anchor="middle" font-size="6" fill="#64748B">{area_sqft} sq.ft</text>'''
-
-    # Door openings if converged
-    if progress > 0.85 and "Living Room" in active_rooms:
-        svg += '''
-        <rect x="74" y="85" width="2.5" height="12" fill="#2563EB"/>
-        <rect x="184" y="85" width="2.5" height="12" fill="#2563EB"/>
-        <rect x="184" y="160" width="2.5" height="12" fill="#2563EB"/>
-        <rect x="120" y="174" width="16" height="2.5" fill="#2563EB"/>
-        '''
-
-    svg += '</svg>'
-    return svg
+from floorgen.rag.llm_brief_parser import ensure_ollama_service
 
 
-def synthesize_floorplan(
-    selected_rooms: List[str],
-    brief_text: str,
-    model_mode: str,
-    top_k: int,
-    step_val: int
-) -> Tuple[str, str, str, str, str]:
-    """Generates floorplan SVG, telemetry metrics, and retrieved exemplar details."""
-    svg_content = render_svg_floorplan(selected_rooms, step_val, model_mode, top_k)
+def setup_environment():
+    """Validates directories, environment file, and background services."""
+    print("=" * 70)
+    print("  [FloorGen] Initializing All-in-One Autonomous Architecture Engine...")
+    print("=" * 70)
 
-    # Telemetry metrics based on model
-    if "FloorGen" in model_mode:
-        fid = f"{12.4 - (top_k - 5)*0.1:.2f}"
-        ged = f"{0.18 - (top_k - 5)*0.005:.3f}"
-        realism = f"{94.1 + (top_k - 5)*0.1:.1f}%"
-        latency = "41.3 ms (GPU) / 146.5 ms (CPU)"
-    elif "HouseDiffusion" in model_mode:
-        fid = "21.80"
-        ged = "0.720"
-        realism = "83.2%"
-        latency = "38.5 ms (GPU) / 139.2 ms (CPU)"
-    else:  # House-GAN++
-        fid = "34.20"
-        ged = "1.840"
-        realism = "74.5%"
-        latency = "18.2 ms (GPU) / 82.0 ms (CPU)"
+    # 1. Verify workspace directories
+    dirs_to_create = [
+        "checkpoints/sota",
+        "data/processed",
+        "data/raw",
+        "outputs/run_demo",
+        "static/images",
+        "static/css",
+        "static/js"
+    ]
+    for d in dirs_to_create:
+        p = REPO_ROOT / d
+        p.mkdir(parents=True, exist_ok=True)
+    print("  [1/4] Workspace directory structure verified.")
 
-    exemplar_info = f"""### 📚 Top-{top_k} Retrieved RAG Exemplars:
-1. **RPLAN_00482**: 2B1B Standard Layout (Hybrid Score: **0.948**)
-2. **RPLAN_01920**: 3B2B Corner Suite (Hybrid Score: **0.912**)
-3. **ResPlan_0821**: Multi-bedroom Family Flat (Hybrid Score: **0.885**)
-4. **RPLAN_12891**: Compact Urban Studio (Hybrid Score: **0.864**)
-5. **ResPlan_1402**: Open-concept Living Balcony (Hybrid Score: **0.849**)
-"""
+    # 2. Ensure .env exists
+    env_file = REPO_ROOT / ".env"
+    env_example = REPO_ROOT / ".env.example"
+    if not env_file.exists() and env_example.exists():
+        shutil.copy(env_example, env_file)
+        print("  [2/4] Initialized .env configuration.")
+    else:
+        print("  [2/4] Configuration environment verified.")
 
-    return svg_content, fid, ged, realism, exemplar_info
+    # 3. Ensure local Ollama background service is running
+    print("  [3/4] Ensuring Ollama AI service is active...")
+    ollama_ok = ensure_ollama_service(timeout=20.0)
+    if ollama_ok:
+        try:
+            req = urllib.request.Request("http://127.0.0.1:11434/api/tags")
+            with urllib.request.urlopen(req, timeout=3.0) as resp:
+                import json
+                models_data = json.loads(resp.read().decode())
+                model_names = [m.get("name") for m in models_data.get("models", [])]
+                active_str = ", ".join(model_names) if model_names else "none"
+                print(f"        ✓ Ollama service online. Active reasoning models: {active_str}")
+        except Exception:
+            print("        ✓ Ollama service online.")
+    else:
+        print("        ! Ollama not reachable; automatic fallback to rule-based parser active.")
 
 
-# Build Gradio UI with theme and layout
-theme = gr.themes.Soft(
-    primary_hue="blue",
-    secondary_hue="cyan",
-    neutral_hue="slate"
-)
+    # 4. Verify model checkpoints
+    ckpt_path = REPO_ROOT / "checkpoints/rag_diffusion.pt"
+    if not ckpt_path.exists():
+        print("  [4/4] Neural checkpoints missing. Initializing model weights...")
+        try:
+            from floorgen.models.train_sota import train_sota_models
+            train_sota_models(epochs=1, batch_size=8, device="cpu")
+            print("        ✓ Neural checkpoints initialized.")
+        except Exception as e:
+            print(f"        ! Checkpoint init notice: {e}")
+    else:
+        print("  [4/4] Neural diffusion and graph checkpoints verified.")
 
-with gr.Blocks(theme=theme, title="FloorGen Cloud Demo") as demo:
-    gr.Markdown(
-        """
-        # 🏛️ FloorGen: Retrieval-Augmented Generative Floorplan Synthesis
-        ### Author: Kumar Mrinal ([@mrinal22258](https://github.com/mrinal22258)) | Interactive Research Demonstration
-        **Preprint**: [FloorGen Research Paper](https://github.com/mrinal22258/floorgen) | **Repository**: [GitHub (mrinal22258/floorgen)](https://github.com/mrinal22258/floorgen)
-        """
-    )
-
-    with gr.Row():
-        # Left: Controls & Constraints
-        with gr.Column(scale=4):
-            gr.Markdown("### 1. Spatial Constraints & Natural Brief")
-            room_selector = gr.CheckboxGroup(
-                choices=list(ROOM_PALETTE.keys()),
-                value=["Living Room", "Master Bedroom", "Second Bedroom", "Bathroom", "Kitchen", "Balcony"],
-                label="Room Inventory Selection"
-            )
-            brief_input = gr.Textbox(
-                value="Modern 2-bedroom residential apartment with central living room, kitchen, and balcony.",
-                label="Natural Language Design Brief",
-                lines=2
-            )
-            model_selector = gr.Dropdown(
-                choices=[
-                    "FloorGen RAG-Diffusion (Ours)",
-                    "HouseDiffusion Baseline (k=0, No RAG)",
-                    "House-GAN++ Relational GAN Baseline"
-                ],
-                value="FloorGen RAG-Diffusion (Ours)",
-                label="Generative Architecture Core"
-            )
-            k_slider = gr.Slider(minimum=1, maximum=10, value=5, step=1, label="Retrieved Exemplar Count (k)")
-            
-            step_slider = gr.Slider(
-                minimum=0,
-                maximum=30,
-                value=30,
-                step=1,
-                label="Diffusion Step Scrubbing (0 = Pure Noise, 30 = Regularized CAD)"
-            )
-            
-            btn_generate = gr.Button("⚡ Synthesize Floorplan", variant="primary")
-
-        # Center: Interactive Canvas
-        with gr.Column(scale=5):
-            gr.Markdown("### 2. Synthesized Vector CAD Viewport")
-            svg_output = gr.HTML(label="Vector Floorplan Canvas")
-
-        # Right: Telemetry & RAG Exemplar Gallery
-        with gr.Column(scale=3):
-            gr.Markdown("### 3. Quantitative Telemetry")
-            with gr.Row():
-                fid_box = gr.Textbox(label="FID Diversity (↓)", interactive=False)
-                ged_box = gr.Textbox(label="Graph Edit Dist (↓)", interactive=False)
-            with gr.Row():
-                realism_box = gr.Textbox(label="Realism Score (↑)", interactive=False)
-            
-            exemplar_box = gr.Markdown("### 📚 Top-k Exemplars Loaded")
-
-    # Wire event handlers
-    inputs = [room_selector, brief_input, model_selector, k_slider, step_slider]
-    outputs = [svg_output, fid_box, ged_box, realism_box, exemplar_box]
-
-    btn_generate.click(fn=synthesize_floorplan, inputs=inputs, outputs=outputs)
-    step_slider.change(fn=synthesize_floorplan, inputs=inputs, outputs=outputs)
-    room_selector.change(fn=synthesize_floorplan, inputs=inputs, outputs=outputs)
-    model_selector.change(fn=synthesize_floorplan, inputs=inputs, outputs=outputs)
-
-    # Initial synthesis trigger
-    demo.load(fn=synthesize_floorplan, inputs=inputs, outputs=outputs)
+    print("-" * 70)
 
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    # 1. Run all auto-setup tasks first
+    setup_environment()
+
+    # 2. Import demo and theme
+    from floorgen.demo.app import create_demo
+    from floorgen.demo.theme import get_ocean_depth_theme, OCEAN_DEPTH_HEAD_SCRIPT, OCEAN_DEPTH_CSS
+
+    print("  [FloorGen] Building Studio Interface...")
+    demo = create_demo()
+
+    print("\n" + "=" * 70)
+    print("  ★ FloorGen Architectural Studio is Ready!")
+    print("  Local URL:   http://localhost:7860  or  http://127.0.0.1:7860")
+    print("=" * 70 + "\n")
+    sys.stdout.flush()
+
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=7860,
+        inbrowser=False,
+        theme=get_ocean_depth_theme(),
+        css=OCEAN_DEPTH_CSS,
+        head=OCEAN_DEPTH_HEAD_SCRIPT
+    )

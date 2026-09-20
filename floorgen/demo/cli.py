@@ -1,26 +1,17 @@
 """
 FloorGen Command-Line Interface (CLI).
-Allows synthesizing floorplans from constraints, querying RAG exemplars, and exporting SVGs.
-
-Usage examples:
-  python -m floorgen.demo.cli --rooms living_room,master_bedroom,bathroom,kitchen --top_k 5 --output output.svg
-  python -m floorgen.demo.cli --brief "Spacious 3-bedroom family apartment with large living room" --output result.svg
+High-performance synthesis using pre-warmed FloorGenPipeline singleton.
 """
 
 import os
 import argparse
 import json
 import torch
-import numpy as np
 
-from floorgen.data.scripts.parse_rplan import load_plans_from_dir
-from floorgen.data.scripts.generate_sample_data import generate_dataset
-from floorgen.rag.retriever import FloorplanRAGRetriever
-from floorgen.models.diffusion_core.house_diffusion import DDPMScheduler
-from floorgen.models.diffusion_core.rag_diffusion import RAGFloorplanDiffusion
-from floorgen.postprocess.vectorize import regularize_floorplan, export_svg, export_json_vector
-from floorgen.eval.llm_judge import evaluate_structural_realism
-from floorgen.data.dataset import ROOM_TYPE_TO_ID
+from floorgen import __version__
+from floorgen.config import FloorGenConfig, default_config
+from floorgen.pipeline import FloorGenPipeline
+from floorgen.postprocess.vectorize import export_json_vector
 
 
 def main():
@@ -38,94 +29,113 @@ def main():
                         help="Output path for rendered SVG")
     parser.add_argument("--data_dir", type=str, default="data/processed",
                         help="Path to floorplan corpus directory")
+    parser.add_argument("--checkpoint", type=str, default="checkpoints/rag_diffusion.pt",
+                        help="Path to trained model weights checkpoint")
+    parser.add_argument("--solver", action="store_true", default=True,
+                        help="Enable Google OR-Tools CP-SAT architectural constraint solver")
+    parser.add_argument("--no_solver", dest="solver", action="store_false")
+    parser.add_argument("--export_dxf", action="store_true", default=True,
+                        help="Export professional AutoCAD DXF deliverable")
+    parser.add_argument("--export_ifc", action="store_true", default=True,
+                        help="Export ISO-16739 compliant IFC BIM model deliverable")
+    parser.add_argument("--sampling", type=str, choices=["ddim", "ddpm"], default="ddim",
+                        help="Sampling method (fast DDIM or stochastic DDPM)")
+    parser.add_argument("--steps", type=int, default=20,
+                        help="Number of reverse diffusion sampling steps")
+    parser.add_argument("--batch", type=int, default=1,
+                        help="Number of layout variants to sample (selects highest realism score)")
+    parser.add_argument("--device", type=str, default=None,
+                        help="Device to run inference on (cuda or cpu)")
     args = parser.parse_args()
 
     print("=" * 65)
-    print("         FloorGen: Generative Floorplan Synthesis")
+    print(f"         FloorGen v{__version__}: Generative Floorplan Synthesis")
     print("=" * 65)
 
-    room_list = [r.strip() for r in args.rooms.split(",") if r.strip()]
-    print(f"Target Room List: {room_list}")
+    # If rooms specified explicitly, use them; if only brief given, let pipeline infer via Ollama
+    room_list = None
+    if "--rooms" in os.sys.argv:
+        room_list = [r.strip() for r in args.rooms.split(",") if r.strip()]
+        print(f"Target Room List: {room_list}")
+    elif not args.brief:
+        room_list = [r.strip() for r in args.rooms.split(",") if r.strip()]
+        print(f"Default Room List: {room_list}")
+
     if args.brief:
         print(f"User Brief: '{args.brief}'")
 
-    # 1. Ingestion & RAG Indexing
-    plans = load_plans_from_dir(args.data_dir)
-    if len(plans) == 0:
-        print(f"[FloorGen] No indexed plans found in '{args.data_dir}'. Generating dataset...")
-        plans = generate_dataset(num_samples=100, output_dir=args.data_dir)
-
-    retriever = FloorplanRAGRetriever()
-    retriever.index_corpus(plans)
-
-    # 2. Retrieve top-k exemplars
-    exemplar_boxes = None
-    if args.rag:
-        print(f"[FloorGen RAG] Searching top-{args.top_k} nearest real floorplan exemplars...")
-        retrieved = retriever.retrieve(room_list=room_list, text_brief=args.brief, top_k=args.top_k)
-        print(f"[FloorGen RAG] Retrieved {len(retrieved)} matching exemplars:")
-        for r in retrieved:
-            print(f"   • [{r['plan_id']}] (Score: {r['score']:.3f}) - {r['plan'].get('archetype', 'plan')}")
-
-        cond = retriever.format_conditioning_context(retrieved)
-        if cond["exemplar_boxes"] is not None:
-            exemplar_boxes = torch.tensor(cond["exemplar_boxes"], dtype=torch.float32).unsqueeze(0) # (1, K, N, 4)
-
-    # 3. Model Generation
-    print("[FloorGen] Running Vector Diffusion Generative Core...")
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    scheduler = DDPMScheduler(num_timesteps=200).to(torch.device(device))
-    model = RAGFloorplanDiffusion(hidden_dim=128, num_layers=4).to(device)
-
-    # Prepare inputs
-    max_rooms = max(len(room_list), 12)
-    room_types_t = torch.zeros((1, max_rooms), dtype=torch.long, device=device)
-    room_mask_t = torch.zeros((1, max_rooms), dtype=torch.bool, device=device)
-    adj_matrix_t = torch.zeros((1, max_rooms, max_rooms), dtype=torch.float32, device=device)
-
-    for i, r in enumerate(room_list[:max_rooms]):
-        room_types_t[0, i] = ROOM_TYPE_TO_ID.get(r, 0)
-        room_mask_t[0, i] = True
-        # Default chain/star connectivity if unspecified
-        if i > 0:
-            adj_matrix_t[0, 0, i] = 1.0
-            adj_matrix_t[0, i, 0] = 1.0
-
-    if exemplar_boxes is not None:
-        exemplar_boxes = exemplar_boxes.to(device)
-
-    # Diffusion Reverse Denoising Sampling
-    pred_boxes = model.sample(
-        scheduler=scheduler,
-        room_types=room_types_t,
-        adj_matrix=adj_matrix_t,
-        room_mask=room_mask_t,
-        retrieved_exemplars=exemplar_boxes,
-        num_inference_steps=30
+    # Configure pipeline overrides
+    cfg = FloorGenConfig(
+        data_dir=args.data_dir,
+        checkpoint_path=args.checkpoint,
+        device=args.device or ("cuda" if torch.cuda.is_available() else "cpu"),
+        top_k=args.top_k,
+        default_sampling=args.sampling,
+        default_steps=args.steps,
+        enable_solver=args.solver
     )
 
-    raw_boxes_np = pred_boxes[0].cpu().numpy()
-    mask_np = room_mask_t[0].cpu().numpy()
+    pipeline = FloorGenPipeline.get_instance(cfg)
+    device_str = str(pipeline.device)
+    print(f"[FloorGen] Running Vector Diffusion Generative Core on device: {device_str}")
+    if device_str == "cuda":
+        print(f"[FloorGen] GPU Device: {torch.cuda.get_device_name(0)}")
+    print(f"[FloorGen] Loaded trained checkpoint from '{cfg.checkpoint_path}' (Epoch {pipeline.checkpoint_epoch})")
 
-    # 4. Post-processing & Vectorization
-    print("[FloorGen] Vectorizing & regularizing room geometry...")
-    vector_plan = regularize_floorplan(raw_boxes_np, room_list, mask_np)
+    if args.rag and pipeline.retriever:
+        print(f"[FloorGen RAG] Searching top-{args.top_k} nearest real floorplan exemplars (MMR Diverse)...")
 
-    # 5. Structural Realism Evaluation
-    eval_stats = evaluate_structural_realism(vector_plan)
-    print(f"[FloorGen Quality] Realism Score: {eval_stats['overall_realism']}% | Aspect Ratio: {eval_stats['aspect_ratio_score']} | Circulation: {eval_stats['circulation_score']}")
+    print(f"[FloorGen] Synthesizing {max(1, args.batch)} layout candidate(s) via {args.sampling.upper()} ({args.steps} steps)...")
+    res = pipeline.generate(
+        rooms=room_list,
+        brief=args.brief,
+        top_k=args.top_k,
+        batch=args.batch,
+        sampling=args.sampling,
+        steps=args.steps,
+        solver=args.solver,
+        export_dxf_flag=args.export_dxf,
+        export_ifc_flag=args.export_ifc
+    )
 
-    # 6. Export SVG
-    svg_code = export_svg(vector_plan)
+    if res.exemplars:
+        print(f"[FloorGen RAG] Retrieved {len(res.exemplars)} matching exemplars:")
+        for r in res.exemplars:
+            p = r.get("plan", {})
+            print(f"   - [{r.get('plan_id')}] (Score: {r.get('score', 0):.3f}) - {p.get('archetype', 'real_rplan')}")
+
+    print(f"[FloorGen Quality] Realism Score: {res.realism_score}% | Aspect Ratio: {res.aspect_ratio:.3f} | Circulation: {res.circulation}")
+    if res.compliance:
+        pass_status = "PASSED" if res.compliance.get("passed") else "WARNINGS"
+        print(f"[FloorGen Compliance] Building Code Audit (IRC/IBC/ADA): {pass_status} ({res.compliance.get('compliance_score', 1.0)*100:.1f}%)")
+
+    # Export Deliverables (SVG, JSON, DXF, IFC)
     with open(args.output, "w", encoding="utf-8") as f:
-        f.write(svg_code)
+        f.write(res.svg)
 
     json_output = os.path.splitext(args.output)[0] + ".json"
-    export_json_vector(vector_plan, json_output)
+    export_json_vector(res.json_spec, json_output)
 
-    print(f"✨ Successfully generated floorplan!")
-    print(f"   • SVG Vector: {args.output}")
-    print(f"   • JSON Spec:  {json_output}")
+    dxf_output = None
+    if args.export_dxf and res.dxf_content:
+        dxf_output = os.path.splitext(args.output)[0] + ".dxf"
+        with open(dxf_output, "w", encoding="utf-8") as f:
+            f.write(res.dxf_content)
+
+    ifc_output = None
+    if args.export_ifc and res.ifc_content:
+        ifc_output = os.path.splitext(args.output)[0] + ".ifc"
+        with open(ifc_output, "w", encoding="utf-8") as f:
+            f.write(res.ifc_content)
+
+    print(f"[FloorGen] Successfully synthesized floorplan deliverables:")
+    print(f"   * SVG Vector:   {args.output}")
+    print(f"   * JSON Spec:    {json_output}")
+    if dxf_output:
+        print(f"   * AutoCAD DXF:  {dxf_output}")
+    if ifc_output:
+        print(f"   * BIM Model:    {ifc_output}")
+
 
 
 if __name__ == "__main__":

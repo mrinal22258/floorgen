@@ -1,0 +1,9 @@
+# Optional dependencies for FLUX.1-dev Architectural LoRA Fine-Tuning
+# Only needed if floorgen/models/diffusion_raster/flux_lora.py is explicitly re-enabled.
+diffusers>=0.32.0,<=0.40.0
+transformers>=5.0.0,<=5.17.0
+peft>=0.14.0,<=0.21.0
+bitsandbytes>=0.45.0,<=0.50.2
+accelerate>=1.1.0,<=1.15.0
+sentencepiece>=0.2.0,<=0.2.1
+protobuf>=4.25.0,<=6.33.6

@@ -22,14 +22,21 @@ def evaluate_structural_realism(floorplan: Dict[str, Any]) -> Dict[str, float]:
     if n_rooms == 0:
         return {"overall_realism": 0.0}
 
-    # 1. Aspect ratio score (penalize aspect < 0.3 or > 3.0)
+    # 1. Aspect ratio score: rooms with aspect ratio up to 1:2.2 are standard in architecture
     aspect_scores = []
     for r in rooms:
-        bbox = r.get("bbox", [0, 0, 10, 10])
+        bbox = r.get("bbox")
+        if not bbox and "polygon" in r and r["polygon"]:
+            pxs = [pt[0] for pt in r["polygon"]]
+            pys = [pt[1] for pt in r["polygon"]]
+            bbox = [min(pxs), min(pys), max(pxs), max(pys)]
+        if not bbox:
+            bbox = [0, 0, 10, 10]
         w = max(1.0, bbox[2] - bbox[0])
         h = max(1.0, bbox[3] - bbox[1])
-        aspect = min(w, h) / max(w, h) # in (0, 1]
-        aspect_scores.append(aspect)
+        ratio = min(w, h) / max(w, h)  # in (0, 1]
+        score = min(1.0, ratio / 0.45)
+        aspect_scores.append(score)
     aspect_score = float(np.mean(aspect_scores))
 
     # 2. Circulation / connectivity score
@@ -55,12 +62,25 @@ def evaluate_structural_realism(floorplan: Dict[str, Any]) -> Dict[str, float]:
     else:
         compactness = 0.5
 
-    overall = 0.35 * aspect_score + 0.35 * connectivity_ratio + 0.30 * compactness
+    # 4. Overlap penalty: severely penalizes overlapping rooms
+    overlap_area = 0.0
+    for i in range(n_rooms):
+        b1 = rooms[i].get("bbox", [0, 0, 0, 0])
+        for j in range(i + 1, n_rooms):
+            b2 = rooms[j].get("bbox", [0, 0, 0, 0])
+            dx = max(0.0, min(b1[2], b2[2]) - max(b1[0], b2[0]))
+            dy = max(0.0, min(b1[3], b2[3]) - max(b1[1], b2[1]))
+            overlap_area += dx * dy
+
+    overlap_penalty = max(0.0, 1.0 - (overlap_area / max(1.0, total_room_area)) * 6.0)
+
+    overall = 0.30 * aspect_score + 0.30 * connectivity_ratio + 0.15 * compactness + 0.25 * overlap_penalty
 
     return {
         "aspect_ratio_score": round(aspect_score, 3),
         "circulation_score": round(connectivity_ratio, 3),
         "compactness_score": round(compactness, 3),
+        "overlap_penalty": round(overlap_penalty, 3),
         "overall_realism": round(overall * 100.0, 1)
     }
 

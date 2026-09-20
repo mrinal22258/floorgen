@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" width="500" height="500" style="background-color: #FAFAFA; font-family: Inter, Roboto, sans-serif;">
+<defs>
+  <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+    <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.08"/>
+  </filter>
+</defs>
+  <polygon points="186.0,257.0 186.0,457.0 355.0,457.0 355.0,257.0" fill="#E0F2F1" stroke="#26A69A" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="270.5" y="353.0" text-anchor="middle" font-size="7.5" font-weight="600" fill="#263238">Bathroom</text>
+  <text x="270.5" y="364.0" text-anchor="middle" font-size="5.5" fill="#546E7A">33938 sq.ft</text>
+  <polygon points="276.0,89.0 271.0,127.0 221.0,111.0 204.0,125.0 223.0,136.0 184.0,137.0 194.0,118.0 162.0,118.0 162.0,141.0 201.0,153.0 154.0,152.0 150.0,111.0 111.0,111.0 121.0,157.0 97.0,145.0 102.0,97.0" fill="#FFF8E1" stroke="#FDD835" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="177.0625" y="122.75" text-anchor="middle" font-size="7.5" font-weight="600" fill="#263238">Second Bedroom</text>
+  <text x="177.0625" y="133.75" text-anchor="middle" font-size="5.5" fill="#546E7A">4807 sq.ft</text>
+  <polygon points="272.0,127.0 304.0,129.0 309.0,114.0 410.0,114.0 415.0,162.0 394.0,173.0 401.0,128.0 318.0,128.0 316.0,148.0 275.0,137.0" fill="#E0F2F1" stroke="#26A69A" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="341.4" y="132.0" text-anchor="middle" font-size="7.5" font-weight="600" fill="#263238">Bathroom</text>
+  <text x="341.4" y="143.0" text-anchor="middle" font-size="5.5" fill="#546E7A">2830 sq.ft</text>
+  <polygon points="209.0,46.0 214.0,41.0 271.0,41.0 276.0,66.0 270.0,77.0 263.0,77.0 262.0,55.0 223.0,55.0 223.0,66.0 247.0,68.0 249.0,75.0 230.0,71.0 229.0,77.0 215.0,78.0" fill="#FBE9E7" stroke="#FF7043" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="241.5" y="59.785714285714285" text-anchor="middle" font-size="7.5" font-weight="600" fill="#263238">Kitchen</text>
+  <text x="241.5" y="70.78571428571428" text-anchor="middle" font-size="5.5" fill="#546E7A">1668 sq.ft</text>
+  <polygon points="204.0,172.0 204.0,180.0 222.0,177.0 238.0,183.0 237.0,188.0 201.0,186.0 206.0,204.0 258.0,206.0 263.0,200.0 263.0,185.0 251.0,188.0 251.0,178.0 260.0,178.0 260.0,172.0" fill="#FFF3E0" stroke="#FB8C00" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="237.0" y="181.5" text-anchor="middle" font-size="7.5" font-weight="600" fill="#263238">Master Bedroom</text>
+  <text x="237.0" y="192.5" text-anchor="middle" font-size="5.5" fill="#546E7A">1524 sq.ft</text>
+  <polygon points="235.0,216.0 235.0,245.0 296.0,245.0 296.0,218.0 284.0,230.0 242.0,231.0 241.0,221.0 274.0,225.0 274.0,218.0" fill="#EFEBE9" stroke="#8D6E63" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="264.1111111111111" y="223.66666666666666" text-anchor="middle" font-size="7.5" font-weight="600" fill="#263238">Study</text>
+  <text x="264.1111111111111" y="234.66666666666666" text-anchor="middle" font-size="5.5" fill="#546E7A">1236 sq.ft</text>
+</svg>

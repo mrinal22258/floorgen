@@ -1,12 +1,15 @@
 # Core Machine Learning & Scientific Computing
 torch>=2.0.0
-numpy>=1.23.0
+numpy>=1.23.0,<2.0.0
 scipy>=1.10.0
 scikit-learn>=1.2.0
 
-# Graph and Geometry
+# Graph, Geometry & CAD
 networkx>=3.0
 shapely>=2.0.0
+ezdxf>=1.1.0
+ortools>=9.6.0
+opencv-python>=4.8.0
 matplotlib>=3.7.0
 seaborn>=0.12.0
 pillow>=9.5.0
@@ -25,3 +28,11 @@ gradio>=4.44.0
 tqdm>=4.65.0
 pydantic>=2.0.0
 pytest>=7.3.0
+python-multipart>=0.0.6
+ollama>=0.1.0
+
+# Hugging Face Hub (Model Repository Client)
+huggingface-hub>=1.23.0,<=1.32.0
+
+# Note: FLUX.1-dev training dependencies (diffusers, transformers, peft, bitsandbytes, accelerate, sentencepiece, protobuf)
+# have been moved to requirements-flux-optional.txt since FLUX is unused at inference time.

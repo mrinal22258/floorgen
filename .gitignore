@@ -75,7 +75,18 @@ venv.bak/
 *.swp
 *.swo
 
-# OS files
+# OS and Local Wrappers
 .DS_Store
 Thumbs.db
 powershell.bat
+floorgen_zip.zip
+fp.zip
+*.zip
+*.log
+
+# Large Datasets, Checkpoints, and Generated Outputs
+/data/
+/checkpoints/
+/outputs/
+demo.*
+

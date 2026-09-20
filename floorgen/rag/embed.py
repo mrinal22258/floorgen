@@ -105,12 +105,42 @@ class FloorplanEmbedder:
             vec = vec / norm
         return vec
 
+    def compute_geometric_descriptor(self, plan: Dict[str, Any]) -> np.ndarray:
+        """
+        Extracts multi-modal geometric feature descriptor:
+        - Normalized room areas
+        - Room aspect ratios
+        - Centroid locations
+        - Connectivity degree
+        """
+        geom = np.zeros(self.embedding_dim, dtype=np.float32)
+        rooms = plan.get("rooms", [])
+        for i, r in enumerate(rooms[:16]):
+            bbox = r.get("bbox", [0, 0, 10, 10])
+            w = max(1.0, float(abs(bbox[2] - bbox[0])))
+            h = max(1.0, float(abs(bbox[3] - bbox[1])))
+            area = float(r.get("area", w * h))
+            aspect = min(4.0, max(w / h, h / w))
+            base = (i * 4) % (self.embedding_dim - 64)
+            geom[base + 0] += area / 2000.0
+            geom[base + 1] += aspect / 4.0
+            geom[base + 2] += (bbox[0] + bbox[2]) / 512.0
+            geom[base + 3] += (bbox[1] + bbox[3]) / 512.0
+
+        for u, v in plan.get("adjacency", []):
+            idx = 48 + ((u * 7 + v) % (self.embedding_dim - 48))
+            geom[idx] += 0.5
+
+        norm = np.linalg.norm(geom)
+        if norm > 1e-6:
+            geom = geom / norm
+        return geom
+
     def embed_text(self, text: str) -> np.ndarray:
         """Embeds a natural language query or templated floorplan text."""
         if self.model is not None:
             try:
                 emb = self.model.encode(text, convert_to_numpy=True)
-                # Normalize
                 norm = np.linalg.norm(emb)
                 return emb / (norm + 1e-8)
             except Exception:
@@ -118,16 +148,15 @@ class FloorplanEmbedder:
         return self._fallback_embed(text)
 
     def embed_plan(self, plan: Dict[str, Any]) -> np.ndarray:
-        """Embeds a full floorplan dictionary."""
+        """Multi-modal embedding fusing text description with geometric layout topology."""
         text = plan_to_text_template(plan)
-        if self.model is not None:
-            try:
-                emb = self.model.encode(text, convert_to_numpy=True)
-                norm = np.linalg.norm(emb)
-                return emb / (norm + 1e-8)
-            except Exception:
-                pass
-        return self._fallback_embed(plan)
+        text_emb = self.embed_text(text)
+        geom_emb = self.compute_geometric_descriptor(plan)
+        
+        # Multi-modal fusion: 75% semantic text + 25% physical geometric descriptor
+        fused = 0.75 * text_emb + 0.25 * geom_emb
+        norm = np.linalg.norm(fused)
+        return fused / (norm + 1e-8)
 
     def embed_batch_plans(self, plans: List[Dict[str, Any]]) -> np.ndarray:
         """Embeds a list of floorplans into a (N, D) numpy array."""
